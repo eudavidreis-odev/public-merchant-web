@@ -1,6 +1,6 @@
 
 import { Link, usePathname } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { List } from 'react-native-paper';
 
 const menuItems = [
@@ -18,7 +18,7 @@ export default function Sidebar() {
       <List.Section>
         <List.Subheader>Lancheria Merchant</List.Subheader>
         {menuItems.map((item) => (
-          <Link href={item.path} asChild key={item.key}>
+          <Link href={item.path as any} asChild key={item.key}>
             <List.Item
               title={item.title}
               left={(props) => <List.Icon {...props} icon={item.icon} />}

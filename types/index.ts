@@ -21,7 +21,10 @@ export type Category = {
 
 export type Order = {
     id: string;
-    status: 'Criado' | 'Confirmado' | 'Preparando' | 'Pronto' | 'Entregue' | 'Cancelado';
-    total_centavos: number;
-    items: Array<{ name: string; quantity: number }>;
+    status: 'Criado' | 'Confirmado' | 'Preparando' | 'Pronto' | 'Em entrega' | 'Entregue' | 'Cancelado';
+    total: number; // Alterado de total_centavos
+    items: { name: string; quantity: number }[];
+    createdAt?: Timestamp;
+    customerName?: string; // Adicionado para exibição
+    merchantId?: string; // Necessário para a função de update
 };

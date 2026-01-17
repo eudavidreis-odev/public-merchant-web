@@ -309,7 +309,6 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
     const [price, setPrice] = useState('');
     const [category, setCategory] = useState('');
     const [image, setImage] = useState<string | null>(null);
-    const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
     const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [imageLoading, setImageLoading] = useState(false);
@@ -417,10 +416,6 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
         }
     };
 
-    const getCategoryIcon = (categoryName: string) => {
-        const cat = categories.find(c => c.name === categoryName);
-        return cat?.icon || 'tag';
-    };
     return (
         <Portal>
             <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modalContainer}>
@@ -567,15 +562,27 @@ export default function ProductsScreen() {
     const [reopenAfterCategories, setReopenAfterCategories] = useState(false);
     const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadData();
+    const loadProducts = React.useCallback(async () => {
+        try {
+            const prods = await ProductsService.getProducts();
+            setProducts(prods);
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+            throw error;
+        }
     }, []);
 
-    useEffect(() => {
-        sortProducts();
-    }, [products, sortField, sortDirection]);
+    const loadCategories = React.useCallback(async () => {
+        try {
+            const cats = await CategoriesService.getCategories();
+            setCategories(cats);
+        } catch (error) {
+            console.error('Erro ao carregar categorias:', error);
+            throw error;
+        }
+    }, []);
 
-    const loadData = async () => {
+    const loadData = React.useCallback(async () => {
         setLoading(true);
         try {
             await Promise.all([loadProducts(), loadCategories()]);
@@ -585,29 +592,9 @@ export default function ProductsScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [loadProducts, loadCategories]);
 
-    const loadProducts = async () => {
-        try {
-            const prods = await ProductsService.getProducts();
-            setProducts(prods);
-        } catch (error) {
-            console.error('Erro ao carregar produtos:', error);
-            throw error;
-        }
-    };
-
-    const loadCategories = async () => {
-        try {
-            const cats = await CategoriesService.getCategories();
-            setCategories(cats);
-        } catch (error) {
-            console.error('Erro ao carregar categorias:', error);
-            throw error;
-        }
-    };
-
-    const sortProducts = () => {
+    const sortProducts = React.useCallback(() => {
         const sorted = [...products].sort((a, b) => {
             let compareResult = 0;
 
@@ -627,7 +614,15 @@ export default function ProductsScreen() {
         });
 
         setFilteredProducts(sorted);
-    };
+    }, [products, sortField, sortDirection]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    useEffect(() => {
+        sortProducts();
+    }, [sortProducts]);
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
