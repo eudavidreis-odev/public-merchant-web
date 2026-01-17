@@ -14,6 +14,7 @@ import {
     Modal,
     Portal,
     Provider,
+    Switch,
     Text,
     TextInput
 } from 'react-native-paper';
@@ -552,6 +553,7 @@ export default function ProductsScreen() {
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [activeCategories, setActiveCategories] = useState<string[]>([]);
     const [formVisible, setFormVisible] = useState(false);
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -595,7 +597,12 @@ export default function ProductsScreen() {
     }, [loadProducts, loadCategories]);
 
     const sortProducts = React.useCallback(() => {
-        const sorted = [...products].sort((a, b) => {
+        // Primeiro aplica filtros de categoria
+        const base = activeCategories.length > 0
+            ? products.filter(p => activeCategories.includes(p.category))
+            : products;
+
+        const sorted = [...base].sort((a, b) => {
             let compareResult = 0;
 
             switch (sortField) {
@@ -614,7 +621,7 @@ export default function ProductsScreen() {
         });
 
         setFilteredProducts(sorted);
-    }, [products, sortField, sortDirection]);
+    }, [products, sortField, sortDirection, activeCategories]);
 
     useEffect(() => {
         loadData();
@@ -699,6 +706,23 @@ export default function ProductsScreen() {
     const getCategoryIcon = (categoryName: string) => {
         const cat = categories.find(c => c.name === categoryName);
         return cat?.icon || 'tag';
+    };
+
+    const toggleCategoryFilter = (name: string) => {
+        setActiveCategories(prev => prev.includes(name)
+            ? prev.filter(n => n !== name)
+            : [...prev, name]
+        );
+    };
+
+    const handleAvailabilityToggle = async (p: Product, value: boolean) => {
+        try {
+            await ProductsService.updateProductAvailability(p.id, value);
+            setProducts(prev => prev.map(x => x.id === p.id ? { ...x, available: value } : x));
+        } catch (e) {
+            console.error('Erro ao atualizar disponibilidade:', e);
+            Alert.alert('Erro', 'Não foi possível atualizar a disponibilidade.');
+        }
     };
 
     return (
@@ -798,6 +822,7 @@ export default function ProductsScreen() {
                                         />
                                     </View>
                                 </DataTable.Title>
+                                <DataTable.Title style={{ flex: 1 }}>Disponível</DataTable.Title>
                                 <DataTable.Title style={{ flex: 1 }}>Ações</DataTable.Title>
                             </DataTable.Header>
 
@@ -839,15 +864,25 @@ export default function ProductsScreen() {
                                         {formatBRL(product.price)}
                                     </DataTable.Cell>
                                     <DataTable.Cell style={{ flex: 1, justifyContent: 'center' }}>
+                                        <Switch
+                                            value={product.available !== false}
+                                            onValueChange={(v) => handleAvailabilityToggle(product, v)}
+                                        />
+                                    </DataTable.Cell>
+                                    <DataTable.Cell style={{ flex: 1, justifyContent: 'center' }}>
                                         <View style={styles.actionsCell}>
                                             <IconButton
+                                                mode="contained"
+                                                containerColor="#f3f4f6"
                                                 icon="pencil"
-                                                size={20}
+                                                size={18}
                                                 onPress={() => handleEdit(product)}
                                             />
                                             <IconButton
+                                                mode="contained"
+                                                containerColor="#f3f4f6"
                                                 icon="delete"
-                                                size={20}
+                                                size={18}
                                                 iconColor="#d32f2f"
                                                 onPress={() => handleDelete(product)}
                                             />
@@ -863,6 +898,23 @@ export default function ProductsScreen() {
                             </View>
                         )}
                     </ScrollView>
+                )}
+
+                {/* Filtros por categorias */}
+                {categories.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                        {categories.map((cat) => (
+                            <Chip
+                                key={cat.id}
+                                selected={activeCategories.includes(cat.name)}
+                                onPress={() => toggleCategoryFilter(cat.name)}
+                                icon={cat.icon || 'tag'}
+                                style={{ borderRadius: 999 }}
+                            >
+                                {cat.name}
+                            </Chip>
+                        ))}
+                    </View>
                 )}
             </View>
         </Provider>
@@ -967,7 +1019,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        gap: 12,
+        gap: 8,
     },
     iconGrid: {
         flexDirection: 'row',

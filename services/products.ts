@@ -24,6 +24,7 @@ export type Product = {
     description: string;
     price: number;
     category: string;
+    available?: boolean;
     imageBase64?: string;
     imageMime?: string;
     createdAt?: Timestamp;
@@ -48,6 +49,7 @@ export async function getProducts(): Promise<Product[]> {
                 description: data.description,
                 price: data.price,
                 category: data.category,
+                available: typeof data.available === 'boolean' ? data.available : true,
                 imageBase64: data.imageBase64,
                 imageMime: data.imageMime,
                 createdAt: data.createdAt,
@@ -81,6 +83,7 @@ export async function getProductById(id: string): Promise<Product | null> {
             description: data.description,
             price: data.price,
             category: data.category,
+            available: typeof data.available === 'boolean' ? data.available : true,
             imageBase64: data.imageBase64,
             imageMime: data.imageMime,
             createdAt: data.createdAt,
@@ -102,6 +105,7 @@ export async function addProduct(
         const productsRef = collection(db, 'products');
         const docRef = await addDoc(productsRef, {
             ...product,
+            available: typeof (product as any).available === 'boolean' ? (product as any).available : true,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
         });
@@ -127,6 +131,19 @@ export async function updateProduct(
         });
     } catch (error) {
         console.error('Erro ao atualizar produto:', error);
+        throw error;
+    }
+}
+
+/**
+ * Atualiza apenas a disponibilidade do produto (pausa/retoma venda).
+ */
+export async function updateProductAvailability(id: string, available: boolean): Promise<void> {
+    try {
+        const productRef = doc(db, 'products', id);
+        await updateDoc(productRef, { available, updatedAt: Timestamp.now() });
+    } catch (error) {
+        console.error('Erro ao atualizar disponibilidade do produto:', error);
         throw error;
     }
 }

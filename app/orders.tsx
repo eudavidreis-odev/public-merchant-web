@@ -5,9 +5,9 @@ import {
   ActivityIndicator,
   DataTable,
   IconButton,
-  Menu,
-  SegmentedButtons,
+  Portal,
   Text,
+  TextInput,
   Title,
   useTheme,
 } from 'react-native-paper';
@@ -66,7 +66,11 @@ export default function OrdersScreen() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
-  const [filter, setFilter] = useState('active');
+  // Tabs: 'active' | 'history'
+  const [filter, setFilter] = useState<'active' | 'history'>('active');
+  // Toolbar: busca e data
+  const [searchQuery, setSearchQuery] = useState('');
+  const [datePreset, setDatePreset] = useState<'all' | 'today' | 'last7' | 'month'>('all');
   const router = useRouter();
   const theme = useTheme();
 
@@ -74,6 +78,7 @@ export default function OrdersScreen() {
     setLoading(true);
     const unsubscribe = OrdersService.subscribeOrders(
       (newOrders) => {
+        console.log('[OrdersScreen] Recebidos', newOrders.length, 'pedidos do serviço.');
         setAllOrders(newOrders);
         setLoading(false);
       },
@@ -88,11 +93,52 @@ export default function OrdersScreen() {
   }, []);
 
   const filteredOrders = useMemo(() => {
-    if (filter === 'active') {
-      return allOrders.filter((order) => ACTIVE_STATUSES.includes(order.status));
+    let base = filter === 'active'
+      ? allOrders.filter((order) => ACTIVE_STATUSES.includes(order.status))
+      : allOrders.filter((order) => !ACTIVE_STATUSES.includes(order.status));
+
+    // Busca por ID ou nome do cliente (case-insensitive)
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.trim().toLowerCase();
+      base = base.filter((o) => {
+        const name = (o.customerName || '').toLowerCase();
+        return name.includes(q) || o.id.toLowerCase().includes(q);
+      });
     }
-    return allOrders.filter((order) => !ACTIVE_STATUSES.includes(order.status));
-  }, [allOrders, filter]);
+
+    // Filtro de data por presets
+    const now = new Date();
+    if (datePreset !== 'all') {
+      base = base.filter((o) => {
+        if (!o.createdAt) return false;
+        const d = typeof (o.createdAt as any).toDate === 'function'
+          ? (o.createdAt as any).toDate()
+          : new Date(o.createdAt as any);
+
+        if (datePreset === 'today') {
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+        }
+        if (datePreset === 'last7') {
+          const diffMs = now.getTime() - d.getTime();
+          const diffDays = diffMs / (1000 * 60 * 60 * 24);
+          return diffDays <= 7;
+        }
+        if (datePreset === 'month') {
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }
+        return true;
+      });
+    }
+
+    console.log('[OrdersScreen] Após filtros:', {
+      filter,
+      searchQuery,
+      datePreset,
+      count: base.length,
+    });
+
+    return base;
+  }, [allOrders, filter, searchQuery, datePreset]);
 
   const openMenu = (orderId: string) =>
     setMenuVisible((prev) => ({ ...prev, [orderId]: true }));
@@ -142,28 +188,75 @@ export default function OrdersScreen() {
     <ScrollView style={styles.container}>
       <Title style={styles.title}>Gerenciamento de Pedidos</Title>
 
-      <SegmentedButtons
-        value={filter}
-        onValueChange={setFilter}
-        style={styles.segment}
-        buttons={[
-          { value: 'active', label: 'Em Andamento' },
-          { value: 'history', label: 'Histórico' },
-        ]}
-      />
+      {/* Tabs customizadas */}
+      <View style={styles.tabsContainer}>
+        {[
+          { key: 'active', label: 'Em Andamento' },
+          { key: 'history', label: 'Histórico' },
+        ].map((t) => (
+          <Pressable
+            key={t.key}
+            onPress={() => setFilter(t.key as 'active' | 'history')}
+            style={StyleSheet.flatten([
+              styles.tab,
+              filter === t.key && styles.tabActive,
+            ])}
+          >
+            <Text style={StyleSheet.flatten([
+              styles.tabLabel,
+              filter === t.key && styles.tabLabelActive,
+            ])}>{t.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Toolbar com busca e filtro de data */}
+      <View style={styles.toolbar}>
+        <View style={{ flex: 1 }}>
+          <TextInput
+            mode="outlined"
+            placeholder="Buscar por ID ou Cliente"
+            value={searchQuery}
+            onChangeText={(txt) => setSearchQuery(txt)}
+          />
+        </View>
+
+        <View style={styles.datePresetContainer}>
+          {[
+            { key: 'all', label: 'Todos' },
+            { key: 'today', label: 'Hoje' },
+            { key: 'last7', label: 'Últimos 7 dias' },
+            { key: 'month', label: 'Este mês' },
+          ].map((p) => (
+            <Pressable
+              key={p.key}
+              onPress={() => setDatePreset(p.key as 'all' | 'today' | 'last7' | 'month')}
+              style={StyleSheet.flatten([
+                styles.presetChip,
+                datePreset === p.key && styles.presetChipActive,
+              ])}
+            >
+              <Text style={StyleSheet.flatten([
+                styles.presetLabel,
+                datePreset === p.key && styles.presetLabelActive,
+              ])}>{p.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
 
       <DataTable>
         <DataTable.Header style={styles.header}>
-          <DataTable.Title style={[styles.headerCell, { flex: 2 }]}>
+          <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])}>
             <Text>Pedido / Cliente</Text>
           </DataTable.Title>
-          <DataTable.Title style={[styles.headerCell, { flex: 1.2 }]}>
+          <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])}>
             <Text>Data</Text>
           </DataTable.Title>
           <DataTable.Title style={styles.headerCell} numeric>
             <Text>Total</Text>
           </DataTable.Title>
-          <DataTable.Title style={[styles.headerCell, { flex: 1.5 }]}>
+          <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])}>
             <Text>Status</Text>
           </DataTable.Title>
           <DataTable.Title style={styles.headerCell} numeric>
@@ -175,10 +268,10 @@ export default function OrdersScreen() {
           <Pressable key={order.id} onPress={() => handleRowPress(order)}>
             {({ hovered }) => (
               <DataTable.Row
-                style={[
+                style={StyleSheet.flatten([
                   styles.row,
                   hovered && { backgroundColor: theme.colors.surfaceVariant },
-                ]}>
+                ])}>
                 <DataTable.Cell style={{ flex: 2 }}>
                   <View>
                     <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
@@ -204,23 +297,30 @@ export default function OrdersScreen() {
                   {formatBRLFromCentavos(order.total)}
                 </DataTable.Cell>
                 <DataTable.Cell style={{ flex: 1.5 }}>
-                  <Menu
-                    visible={!!menuVisible[order.id]}
-                    onDismiss={() => closeMenu(order.id)}
-                    anchor={
-                      <OrderStatusChip
-                        status={order.status}
-                        onPress={() => openMenu(order.id)}
-                      />
-                    }>
-                    {ORDER_STATUSES.map((status) => (
-                      <Menu.Item
-                        key={status}
-                        onPress={() => handleStatusChange(order, status)}
-                        title={status}
-                      />
-                    ))}
-                  </Menu>
+                  <OrderStatusChip
+                    status={order.status}
+                    onPress={() => openMenu(order.id)}
+                  />
+                  {menuVisible[order.id] && (
+                    <Portal>
+                      <View style={styles.statusMenuOverlay}>
+                        <View style={styles.statusMenuCard}>
+                          {ORDER_STATUSES.map((status) => (
+                            <Pressable
+                              key={status}
+                              onPress={() => handleStatusChange(order, status)}
+                              style={styles.statusMenuItem}
+                            >
+                              <Text>{status}</Text>
+                            </Pressable>
+                          ))}
+                          <Pressable onPress={() => closeMenu(order.id)} style={styles.statusMenuClose}>
+                            <Text style={{ color: '#6b7280' }}>Fechar</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </Portal>
+                  )}
                 </DataTable.Cell>
                 <DataTable.Cell numeric>
                   <Link
@@ -253,7 +353,7 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
     backgroundColor: '#fff',
   },
   centered: {
@@ -262,12 +362,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    marginBottom: 16,
-    fontSize: 24,
-    fontWeight: 'bold',
+    marginBottom: 12,
+    fontSize: 26,
+    fontWeight: '700',
   },
-  segment: {
-    marginBottom: 16,
+  tabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    gap: 8,
+  },
+  tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  tabActive: {
+    backgroundColor: '#f3f4f6',
+  },
+  tabLabel: {
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  tabLabelActive: {
+    color: '#111827',
+  },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  datePresetContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  presetChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+  },
+  presetChipActive: {
+    backgroundColor: '#e5e7eb',
+  },
+  presetLabel: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  presetLabelActive: {
+    color: '#111827',
   },
   header: {
     backgroundColor: '#f7f7f7',
@@ -275,12 +421,41 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   headerCell: {
-    paddingHorizontal: 4, // Reduzido
+    paddingHorizontal: 8,
   },
   row: {
-    minHeight: 56, // Densidade ajustada
+    minHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  statusMenuOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 50,
+    paddingTop: 8,
+  },
+  statusMenuCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    minWidth: 160,
+  },
+  statusMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  statusMenuClose: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 10,

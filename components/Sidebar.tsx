@@ -1,7 +1,7 @@
 
 import { Link, usePathname } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import { List } from 'react-native-paper';
+import { StyleSheet as RNStyleSheet, StyleSheet, Text, View } from 'react-native';
+import { List, useTheme } from 'react-native-paper';
 
 const menuItems = [
   { key: 'index', title: 'Dashboard', icon: 'view-dashboard', path: '/' },
@@ -12,20 +12,42 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const theme = useTheme();
 
   return (
     <View style={styles.sidebar}>
+      <View style={styles.brandBox}>
+        <Text style={styles.brandTitle}>Lancheria Merchant</Text>
+      </View>
       <List.Section>
-        <List.Subheader>Lancheria Merchant</List.Subheader>
-        {menuItems.map((item) => (
-          <Link href={item.path as any} asChild key={item.key}>
-            <List.Item
-              title={item.title}
-              left={(props) => <List.Icon {...props} icon={item.icon} />}
-              style={pathname === item.path ? styles.activeItem : {}}
-            />
-          </Link>
-        ))}
+        {menuItems.map((item) => {
+          const isActive = pathname === item.path;
+          return (
+            <Link href={item.path as any} asChild key={item.key}>
+              <View
+                style={RNStyleSheet.flatten([
+                  styles.itemWrapper,
+                  isActive && styles.itemActiveWrapper,
+                ])}
+              >
+                <View
+                  style={RNStyleSheet.flatten([
+                    styles.activeBar,
+                    isActive && { backgroundColor: theme.colors.primary },
+                  ])}
+                />
+                <List.Item
+                  title={item.title}
+                  left={(props) => <List.Icon {...props} icon={item.icon} />}
+                  style={RNStyleSheet.flatten([
+                    styles.item,
+                    isActive && styles.activeItem,
+                  ])}
+                />
+              </View>
+            </Link>
+          );
+        })}
       </List.Section>
     </View>
   );
@@ -33,12 +55,45 @@ export default function Sidebar() {
 
 const styles = StyleSheet.create({
   sidebar: {
-    width: 250,
-    backgroundColor: '#f7f7f7',
+    width: 260,
+    backgroundColor: '#f8fafc',
     borderRightWidth: 1,
-    borderRightColor: '#e0e0e0',
+    borderRightColor: '#e5e7eb',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  brandBox: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  itemWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  itemActiveWrapper: {
+    backgroundColor: '#eef2ff',
+  },
+  activeBar: {
+    width: 4,
+    alignSelf: 'stretch',
+    backgroundColor: 'transparent',
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
   },
   activeItem: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: 'transparent',
   },
-});
+  item: {
+    paddingVertical: 12,
+  },
+},
+);

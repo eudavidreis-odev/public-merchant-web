@@ -6,6 +6,7 @@ export type Product = {
     description: string;
     price: number;
     category: string;
+    available?: boolean; // disponibilidade para pausar venda
     imageBase64?: string;
     imageMime?: string;
     createdAt?: Timestamp;
