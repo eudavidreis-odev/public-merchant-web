@@ -94,6 +94,9 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Dashboard</Text>
+      <Text style={{ opacity: 0.7, marginBottom: 16 }}>
+        Visão geral do desempenho do seu negócio em tempo real.
+      </Text>
 
       {/* KPIs */}
       <View style={styles.kpiRow}>

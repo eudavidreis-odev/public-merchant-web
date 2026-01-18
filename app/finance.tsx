@@ -11,6 +11,9 @@ export default function FinanceScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text variant="displayMedium">Análise Financeira</Text>
+        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+          Veja métricas financeiras, receitas e rankings dos últimos 30 dias.
+        </Text>
         <Text variant="headlineSmall">Período: Últimos 30 dias</Text>
       </View>
 

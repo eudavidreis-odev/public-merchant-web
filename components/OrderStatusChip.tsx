@@ -9,6 +9,7 @@ type Status = Order['status'];
 interface OrderStatusChipProps {
     status: Status;
     onPress?: () => void;
+    selected?: boolean;
 }
 
 function getStatusColors(_theme: ReturnType<typeof useTheme>, status: Status) {
@@ -36,14 +37,29 @@ function getStatusColors(_theme: ReturnType<typeof useTheme>, status: Status) {
 const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
     status,
     onPress,
+    selected = false,
 }) => {
     const theme = useTheme();
     const c = getStatusColors(theme, status);
-
+    // Cores mais fortes para selecionado
+    const strongBg = c.bg === '#EFF6FF' ? '#3B82F6' :
+        c.bg === '#FEF2F2' ? '#EF4444' :
+            c.bg === '#F0FDF4' ? '#22C55E' :
+                c.bg === '#FEFCE8' ? '#EAB308' :
+                    c.bg === '#F5F3FF' ? '#8B5CF6' :
+                        c.bg === '#FFF7ED' ? '#F97316' :
+                            c.bg === '#F3F4F6' ? '#9CA3AF' :
+                                '#374151';
+    const strongFg = '#fff';
     return (
-        <View style={StyleSheet.flatten([styles.badge, { backgroundColor: c.bg }])}>
-            <MaterialCommunityIcons name={c.icon as any} size={16} color={c.fg} style={{ marginRight: 6 }} />
-            <Text style={[styles.text, { color: c.fg }]} onPress={onPress}>{status}</Text>
+        <View
+            style={StyleSheet.flatten([
+                styles.badge,
+                { backgroundColor: selected ? strongBg : c.bg, borderWidth: selected ? 2 : 0, borderColor: selected ? strongBg : 'transparent' },
+            ])}
+        >
+            <MaterialCommunityIcons name={c.icon as any} size={16} color={selected ? strongFg : c.fg} style={{ marginRight: 6 }} />
+            <Text style={[styles.text, { color: selected ? strongFg : c.fg }]} onPress={onPress}>{status}</Text>
         </View>
     );
 };
