@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Avatar, Card, Chip, List } from 'react-native-paper';
+import { CARD_PADDING } from '../../constants/card';
 import type { MenuItemPoint } from '../../services/finance';
 
 const getIconForType = (type: string) => {
@@ -54,6 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     marginVertical: 8,
+    padding: CARD_PADDING,
   },
   listItem: {
     borderBottomWidth: 1,

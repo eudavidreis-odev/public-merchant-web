@@ -1,109 +1,127 @@
 
 import React from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { BarChart } from 'react-native-gifted-charts';
-import { Text } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Card, Text } from 'react-native-paper';
+import { CARD_PADDING } from '../../constants/card';
 import type { CategoryPoint } from '../../services/finance';
 
 type Props = { data: CategoryPoint[] };
 
 export default function CategoryRanking({ data }: Props) {
   const totalValue = data.reduce((sum, item) => sum + item.value, 0);
-  const { height: screenHeight } = useWindowDimensions();
-  const barWidth = 30;
-  const spacing = 12;
-  const contentHeight = Math.max(180, data.length * (barWidth + spacing) + 24);
-  const maxChartAreaHeight = Math.min(520, Math.max(260, Math.floor(screenHeight * 0.55)));
-  const chartAreaHeight = Math.min(contentHeight, maxChartAreaHeight);
+  const maxValue = Math.max(...data.map((d) => d.value), 0);
 
   return (
-    <View style={styles.container}>
-      <Text variant="titleLarge" style={styles.title}>Ranking de Categorias (Faturamento)</Text>
-      <Text variant="bodyMedium" style={styles.subtitle}>
-        {data.length > 0
-          ? `Total no período: R$ ${totalValue.toFixed(2)} • ${data.length} categorias`
-          : 'Sem dados de faturamento por categoria no período.'}
-      </Text>
-      <View style={[styles.chartContainer, { height: chartAreaHeight }]}>
-        <ScrollView
-          style={styles.chartScroll}
-          contentContainerStyle={styles.chartScrollContent}
-          showsVerticalScrollIndicator={true}
-        >
-          <BarChart
-            horizontal
-            isAnimated
-            barWidth={barWidth}
-            spacing={spacing}
-            initialSpacing={8}
-            endSpacing={8}
-            height={contentHeight}
-            data={data}
-            yAxisAtTop
-            xAxisLabelTextStyle={styles.xAxisLabel}
-            noOfSections={4}
-            barBorderRadius={4}
-            hideRules
-            hideYAxisText={false}
-            yAxisLabelWidth={160}
-            yAxisLabelTextStyle={styles.yAxisLabel}
-            xAxisThickness={0}
-            yAxisThickness={0}
-            renderTooltip={(item: { value: number; label: string; frontColor?: string }) => (
-              <View style={styles.tooltip}>
-                <Text style={{ color: 'white' }}>R$ {item.value.toFixed(2)}</Text>
-              </View>
-            )}
-          // Custom rendering to show label on the left and value on the right
-          />
-        </ScrollView>
-      </View>
-    </View>
+    <Card style={styles.container}>
+      <Card.Content style={styles.header}>
+        <Text variant="titleLarge" style={styles.title}>
+          Ranking de Categorias (Faturamento)
+        </Text>
+        <Text variant="bodyMedium" style={styles.subtitle}>
+          {data.length > 0
+            ? `Total no período: R$ ${totalValue.toFixed(2)} • ${data.length} categorias`
+            : 'Sem dados de faturamento por categoria no período.'}
+        </Text>
+      </Card.Content>
+
+      <Card.Content style={styles.content}>
+        <View style={styles.chartWrapper}>
+          {data.length === 0 ? (
+            <Text variant="bodyMedium" style={{ opacity: 0.7 }}>
+              Sem categorias para exibir.
+            </Text>
+          ) : (
+            data.map((item) => {
+              const pct = maxValue > 0 ? item.value / maxValue : 0;
+              const barColor = item.frontColor || '#007BFF';
+              return (
+                <View key={item.label} style={styles.row}>
+                  <View style={styles.labelCol}>
+                    <Text style={styles.labelText} numberOfLines={1}>
+                      {item.label}
+                    </Text>
+                  </View>
+
+                  <View style={styles.barCol}>
+                    <View style={styles.barTrack}>
+                      <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: barColor }]} />
+                    </View>
+                  </View>
+
+                  <View style={styles.valueCol}>
+                    <Text style={styles.valueText} numberOfLines={1}>
+                      R$ {item.value.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+      </Card.Content>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    padding: 16,
     borderRadius: 8,
     marginVertical: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    padding: CARD_PADDING,
+  },
+  header: {
+    paddingBottom: 6,
   },
   title: {
-    marginBottom: 6,
+    marginBottom: 2,
   },
   subtitle: {
     opacity: 0.7,
-    marginBottom: 12,
   },
-  chartContainer: {
-    paddingLeft: 12,
+  content: {
+    paddingTop: 0,
+    paddingBottom: 12,
     overflow: 'hidden',
+    position: 'relative',
   },
-  chartScroll: {
-    flex: 1,
+  chartWrapper: {
+    gap: 10,
   },
-  chartScrollContent: {
-    paddingBottom: 8,
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  yAxisLabel: {
-    textAlign: 'left',
+  labelCol: {
+    width: 180,
+  },
+  labelText: {
     color: '#333',
     fontWeight: '600',
   },
-  xAxisLabel: {
-    color: 'gray',
+  barCol: {
+    flex: 1,
   },
-  topLabel: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginLeft: 5,
+  barTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+    overflow: 'hidden',
   },
-  tooltip: {
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    padding: 8,
-    borderRadius: 4
-  }
+  barFill: {
+    height: 10,
+    borderRadius: 999,
+  },
+  valueCol: {
+    width: 110,
+    alignItems: 'flex-end',
+  },
+  valueText: {
+    color: '#111827',
+    fontWeight: '600',
+  },
 });
 

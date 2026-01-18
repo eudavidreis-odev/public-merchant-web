@@ -1,8 +1,9 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
+import { CARD_PADDING } from '../../constants/card';
 import type { RevenuePoint } from '../../services/finance';
 
 type RevenueChartProps = {
@@ -69,9 +70,24 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
-        padding: 16,
+        padding: CARD_PADDING,
         borderRadius: 8,
         marginVertical: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0', // Borda suave
+        // Elevação para Android, sombra para iOS/web
+        ...Platform.select({
+            android: { elevation: 2 },
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 3,
+            },
+            default: {
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            },
+        }),
     },
     title: {
         fontSize: 18,
