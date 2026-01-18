@@ -5,20 +5,18 @@
  */
 
 import {
-    collectionGroup,
+    collection,
     doc,
     onSnapshot,
     orderBy,
     query,
     Timestamp,
-    updateDoc,
-    where,
+    updateDoc
 } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { auth, db } from '../config/firebaseConfig';
 import type { Order } from '../types';
 
-// TODO: Substituir por um ID de lojista dinâmico vindo da autenticação
-const MERCHANT_ID = 'demo-merchant';
+// MerchantId dinâmico via autenticação; opcionalmente pode ser passado pela tela
 
 export type FirestoreOrder = {
     status: Order['status'] | string;
@@ -36,14 +34,19 @@ export type FirestoreOrder = {
  */
 export function subscribeOrders(
     onUpdate: (orders: Order[]) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    merchantIdOverride?: string,
 ): () => void {
-    const ordersRef = collectionGroup(db, 'pedidos');
-    const q = query(
-        ordersRef,
-        where('merchantId', '==', MERCHANT_ID),
-        orderBy('createdAt', 'desc')
-    );
+    const envMerchant = process.env.EXPO_PUBLIC_MERCHANT_ID as string | undefined;
+    const activeMerchantId = merchantIdOverride || auth.currentUser?.uid || envMerchant || null;
+    if (!activeMerchantId) {
+        console.warn('[OrdersService] merchantId não disponível (usuário não autenticado).');
+        onError(new Error('Lojista não autenticado. Faça login para ver pedidos.'));
+        return () => { };
+    }
+    // Consulta diretamente a subcoleção do merchant para evitar depender de campo merchantId no documento
+    const ordersRef = collection(db, 'merchants', activeMerchantId, 'pedidos');
+    const q = query(ordersRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(
         q,

@@ -1,25 +1,27 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import RevenueChart from '../components/charts/RevenueChart';
 import CategoryRanking from '../components/charts/CategoryRanking';
 import MenuMatrix from '../components/charts/MenuMatrix';
+import RevenueChart from '../components/charts/RevenueChart';
+import { useFinanceMetrics } from '../services/finance';
 
 export default function FinanceScreen() {
+  const { revenueMonthly, categoryRanking, menuMatrix } = useFinanceMetrics();
   return (
     <ScrollView style={styles.container}>
-        <View style={styles.header}>
-            <Text variant="displayMedium">Análise Financeira</Text>
-            <Text variant="headlineSmall">Período: Últimos 30 dias</Text>
-        </View>
+      <View style={styles.header}>
+        <Text variant="displayMedium">Análise Financeira</Text>
+        <Text variant="headlineSmall">Período: Últimos 30 dias</Text>
+      </View>
 
-        {/* Revenue Chart - Monthly view */}
-        <RevenueChart period="monthly" />
+      {/* Receita nos últimos 30 dias */}
+      <RevenueChart data={revenueMonthly} />
 
-        {/* Category Ranking */}
-        <CategoryRanking />
+      {/* Ranking de categorias */}
+      <CategoryRanking data={categoryRanking} />
 
-        {/* Menu Engineering Matrix */}
-        <MenuMatrix />
+      {/* Engenharia de cardápio */}
+      <MenuMatrix items={menuMatrix} />
 
     </ScrollView>
   );

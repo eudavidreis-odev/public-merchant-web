@@ -1,34 +1,26 @@
-
 import React from 'react';
-import { View, StyleSheet, Text, ScrollView } from 'react-native';
-import { List, Avatar, Card, Chip } from 'react-native-paper';
-
-// Mock data similar to what useFinanceMetrics's menu engineering would provide
-const mockMenuData = [
-    { id: '1', name: 'X-Tudo Monstro', revenue: 1200, volume: 40, type: 'Campeão' },
-    { id: '2', name: 'Batata Frita G', revenue: 950, volume: 90, type: 'Popular' },
-    { id: '3', name: 'Suco de Açaí 700ml', revenue: 800, volume: 25, type: 'Promissor' },
-    { id: '4', name: 'Combo Casal', revenue: 2500, volume: 50, type: 'Campeão' },
-    { id: '5', name: 'Água com Gás', revenue: 150, volume: 30, type: 'Normal' },
-    { id: '6', name: 'Petit Gateau', revenue: 300, volume: 10, type: 'Dorminhoco' },
-].sort((a, b) => b.revenue - a.revenue);
+import { StyleSheet } from 'react-native';
+import { Avatar, Card, Chip, List } from 'react-native-paper';
+import type { MenuItemPoint } from '../../services/finance';
 
 const getIconForType = (type: string) => {
-    switch (type) {
-        case 'Campeão':
-            return { icon: 'trophy-award', color: '#FFC107' };
-        case 'Popular':
-            return { icon: 'thumb-up-outline', color: '#4CAF50' };
-        case 'Promissor':
-            return { icon: 'lightbulb-on-outline', color: '#007BFF' };
-        case 'Dorminhoco':
-            return { icon: 'sleep', color: '#9E9E9E' };
-        default:
-            return { icon: 'circle-small', color: '#333' };
-    }
+  switch (type) {
+    case 'Campeão':
+      return { icon: 'trophy-award', color: '#FFC107' };
+    case 'Popular':
+      return { icon: 'thumb-up-outline', color: '#4CAF50' };
+    case 'Promissor':
+      return { icon: 'lightbulb-on-outline', color: '#007BFF' };
+    case 'Dorminhoco':
+      return { icon: 'sleep', color: '#9E9E9E' };
+    default:
+      return { icon: 'circle-small', color: '#333' };
+  }
 };
 
-export default function MenuMatrix() {
+type Props = { items: MenuItemPoint[] };
+
+export default function MenuMatrix({ items }: Props) {
   return (
     <Card style={styles.container}>
       <Card.Title
@@ -37,20 +29,20 @@ export default function MenuMatrix() {
       />
       <Card.Content>
         <List.Section>
-            {mockMenuData.map((item) => {
-                const { icon, color } = getIconForType(item.type);
-                return (
-                    <List.Item
-                        key={item.id}
-                        title={item.name}
-                        description={`Faturamento: R$ ${item.revenue.toFixed(2)} | Vendas: ${item.volume} un.`}
-                        titleStyle={{ fontWeight: 'bold' }}
-                        left={props => <Avatar.Icon {...props} icon={icon} color={color} size={40} style={{backgroundColor: 'transparent'}} />}
-                        right={() => <Chip style={{ backgroundColor: color, alignSelf: 'center' }} textStyle={{color: 'white'}}>{item.type}</Chip>}
-                        style={styles.listItem}
-                    />
-                );
-            })}
+          {items.map((item) => {
+            const { icon, color } = getIconForType(item.type);
+            return (
+              <List.Item
+                key={item.id}
+                title={item.name}
+                description={`Faturamento: R$ ${item.revenue.toFixed(2)} | Vendas: ${item.volume} un.`}
+                titleStyle={{ fontWeight: 'bold' }}
+                left={props => <Avatar.Icon {...props} icon={icon} color={color} size={40} style={{ backgroundColor: 'transparent' }} />}
+                right={() => <Chip style={{ backgroundColor: color, alignSelf: 'center' }} textStyle={{ color: 'white' }}>{item.type}</Chip>}
+                style={styles.listItem}
+              />
+            );
+          })}
         </List.Section>
       </Card.Content>
     </Card>

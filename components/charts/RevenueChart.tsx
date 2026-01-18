@@ -1,41 +1,40 @@
 
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, useWindowDimensions, Text } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-
-// Mock data similar to what useFinanceMetrics would provide
-const mockData = {
-    daily: Array.from({ length: 12 }, (_, i) => ({
-        value: Math.floor(Math.random() * 500) + 100,
-        label: `${i * 2}:00`,
-    })),
-    monthly: Array.from({ length: 30 }, (_, i) => ({
-        value: Math.floor(Math.random() * 8000) + 2000,
-        label: `${i + 1}`,
-        dataPointText: `R$${((Math.floor(Math.random() * 8000) + 2000)/1000).toFixed(1)}k`
-    })),
-};
+import { Text } from 'react-native-paper';
+import type { RevenuePoint } from '../../services/finance';
 
 type RevenueChartProps = {
-    period: 'daily' | 'monthly';
+    data: RevenuePoint[];
+    title?: string;
 };
 
-export default function RevenueChart({ period }: RevenueChartProps) {
+export default function RevenueChart({ data, title = 'Evolução da Receita' }: RevenueChartProps) {
     const scrollViewRef = useRef<ScrollView>(null);
     const { width: screenWidth } = useWindowDimensions();
-    const data = period === 'daily' ? mockData.daily : mockData.monthly;
 
     // Smart Width Calculation
     const chartWidth = Math.max(screenWidth - 80, data.length * 50);
 
+    // Reduz rótulos do eixo X para evitar sobreposição: mostra a cada 'step'
+    const dataForChart = useMemo(() => {
+        const n = Math.max(data.length, 1);
+        const step = n <= 10 ? 1 : Math.ceil(n / 4); // 4 marcações principais
+        return data.map((d, idx) => ({
+            ...d,
+            label: idx % step === 0 ? d.label : '',
+        }));
+    }, [data]);
+
     useEffect(() => {
         // Scroll to the end to show the most recent data point
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-    }, [period]);
+    }, [data]);
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Evolução da Receita</Text>
+            <Text variant="titleLarge" style={styles.title}>{title}</Text>
             <ScrollView
                 ref={scrollViewRef}
                 horizontal
@@ -44,7 +43,7 @@ export default function RevenueChart({ period }: RevenueChartProps) {
                 contentContainerStyle={styles.scrollContent}
             >
                 <LineChart
-                    data={data}
+                    data={dataForChart}
                     height={250}
                     width={chartWidth}
                     color="#007BFF"
@@ -56,7 +55,7 @@ export default function RevenueChart({ period }: RevenueChartProps) {
                     xAxisLabelTextStyle={{ color: 'gray', height: 40 }}
                     initialSpacing={15}
                     endSpacing={15}
-                    spacing={chartWidth / (data.length > 1 ? data.length - 1 : 1) - (data.length > 10 ? 15:0) } // Adjust spacing based on width
+                    spacing={chartWidth / (data.length > 1 ? data.length - 1 : 1) - (data.length > 10 ? 15 : 0)} // Adjust spacing based on width
                     dataPointsColor="#007BFF"
                     textColor="black"
                     textFontSize={12}

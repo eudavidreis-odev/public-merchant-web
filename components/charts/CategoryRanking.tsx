@@ -1,35 +1,32 @@
 
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
+import { Text } from 'react-native-paper';
+import type { CategoryPoint } from '../../services/finance';
 
-// Mock data similar to what useFinanceMetrics would provide
-const mockCategoryData = [
-  { value: 4500, label: 'Lanches', frontColor: '#007BFF' },
-  { value: 3200, label: 'Bebidas', frontColor: '#4CAF50' },
-  { value: 1500, label: 'Sobremesas', frontColor: '#FFC107' },
-  { value: 800, label: 'Combos', frontColor: '#F44336' },
-].sort((a, b) => b.value - a.value); // Sort descending
+type Props = { data: CategoryPoint[] };
 
-
-export default function CategoryRanking() {
-  const totalValue = mockCategoryData.reduce((sum, item) => sum + item.value, 0);
+export default function CategoryRanking({ data }: Props) {
+  const totalValue = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ranking de Categorias (Faturamento)</Text>
+      <Text variant="titleLarge" style={styles.title}>Ranking de Categorias (Faturamento)</Text>
       <View style={styles.chartContainer}>
         <BarChart
           horizontal
           isAnimated
           barWidth={30}
-          data={mockCategoryData}
+          data={data}
           yAxisAtTop
           xAxisLabelTextStyle={styles.xAxisLabel}
           noOfSections={4}
           barBorderRadius={4}
           hideRules
-          hideYAxisText
+          hideYAxisText={false}
+          yAxisLabelWidth={160}
+          yAxisLabelTextStyle={styles.yAxisLabel}
           xAxisThickness={0}
           yAxisThickness={0}
           renderTooltip={(item: { value: number; label: string; frontColor?: string }) => (
@@ -52,18 +49,15 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 24,
   },
   chartContainer: {
-    paddingLeft: 10, // Adjust as needed
+    paddingLeft: 12,
   },
   yAxisLabel: {
     textAlign: 'left',
     color: '#333',
     fontWeight: '600',
-    width: 80
   },
   xAxisLabel: {
     color: 'gray',

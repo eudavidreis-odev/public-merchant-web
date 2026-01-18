@@ -3,7 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
+  Button,
   DataTable,
+  Dialog,
   IconButton,
   Portal,
   Text,
@@ -66,6 +68,8 @@ export default function OrdersScreen() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
+  const [confirmChange, setConfirmChange] = useState<{ order: Order; newStatus: Order['status'] } | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   // Tabs: 'active' | 'history'
   const [filter, setFilter] = useState<'active' | 'history'>('active');
   // Toolbar: busca e data
@@ -146,26 +150,27 @@ export default function OrdersScreen() {
   const closeMenu = (orderId: string) =>
     setMenuVisible((prev) => ({ ...prev, [orderId]: false }));
 
-  const handleStatusChange = async (
-    order: Order,
-    newStatus: Order['status']
-  ) => {
+  const requestStatusChange = (order: Order, newStatus: Order['status']) => {
     closeMenu(order.id);
+    setConfirmChange({ order, newStatus });
+  };
+
+  const confirmStatusChange = async () => {
+    if (!confirmChange) return;
+    const { order, newStatus } = confirmChange;
     try {
+      setUpdatingStatus(true);
       if (!order.merchantId) {
         throw new Error('Merchant ID não encontrado para este pedido.');
       }
-      await OrdersService.updateOrderStatus(
-        order.merchantId,
-        order.id,
-        newStatus
-      );
-      // Opcional: feedback de sucesso
+      await OrdersService.updateOrderStatus(order.merchantId, order.id, newStatus);
+      setConfirmChange(null);
     } catch (error) {
       console.error('Erro ao atualizar status do pedido:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
+      const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
       Alert.alert('Erro', `Falha ao atualizar status: ${errorMessage}`);
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -308,7 +313,7 @@ export default function OrdersScreen() {
                           {ORDER_STATUSES.map((status) => (
                             <Pressable
                               key={status}
-                              onPress={() => handleStatusChange(order, status)}
+                              onPress={() => requestStatusChange(order, status)}
                               style={styles.statusMenuItem}
                             >
                               <Text>{status}</Text>
@@ -325,8 +330,8 @@ export default function OrdersScreen() {
                 <DataTable.Cell numeric>
                   <Link
                     href={{
-                      pathname: `/chat/${order.id}`,
-                      params: { merchantId: order.merchantId },
+                      pathname: '/chat/[orderId]',
+                      params: { orderId: order.id, merchantId: order.merchantId },
                     }}
                     asChild>
                     <IconButton icon="chat-outline" size={20} />
@@ -347,6 +352,35 @@ export default function OrdersScreen() {
         )}
       </DataTable>
     </ScrollView>
+  );
+}
+
+// Modal de confirmação de alteração de status
+function ConfirmStatusDialog({ visible, onDismiss, onConfirm, updating, order, newStatus }: {
+  visible: boolean;
+  onDismiss: () => void;
+  onConfirm: () => void;
+  updating: boolean;
+  order?: Order;
+  newStatus?: Order['status'];
+}) {
+  return (
+    <Portal>
+      <Dialog visible={visible} onDismiss={onDismiss}>
+        <Dialog.Title>Confirmar alteração de status</Dialog.Title>
+        <Dialog.Content>
+          <Text>
+            {order && newStatus
+              ? `Deseja alterar o pedido #${order.id.substring(0, 6)} para "${newStatus}"?`
+              : 'Confirmar alteração de status?'}
+          </Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={onDismiss} disabled={updating}>Cancelar</Button>
+          <Button mode="contained" onPress={onConfirm} loading={updating} disabled={updating}>Confirmar</Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
   );
 }
 

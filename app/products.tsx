@@ -779,51 +779,51 @@ export default function ProductsScreen() {
                     </View>
                 ) : (
                     <ScrollView>
+                        {/* Filtros por categorias no topo */}
+                        {categories.length > 0 && (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                                {categories.map((cat) => (
+                                    <Chip
+                                        key={cat.id}
+                                        selected={activeCategories.includes(cat.name)}
+                                        onPress={() => toggleCategoryFilter(cat.name)}
+                                        icon={cat.icon || 'tag'}
+                                        style={{ borderRadius: 999 }}
+                                    >
+                                        {cat.name}
+                                    </Chip>
+                                ))}
+                            </View>
+                        )}
                         <DataTable>
                             <DataTable.Header>
-                                <DataTable.Title style={{ flex: 0.8 }}>Foto</DataTable.Title>
-                                <DataTable.Title
-                                    onPress={() => handleSort('name')}
-                                    style={{ flex: 2 }}
-                                >
+                                <DataTable.Title style={{ flex: 0.8 }}>
+                                    <View style={styles.headerCell}><Text>Foto</Text></View>
+                                </DataTable.Title>
+                                <DataTable.Title onPress={() => handleSort('name')} style={{ flex: 2 }}>
                                     <View style={styles.headerCell}>
                                         <Text>Nome</Text>
-                                        <IconButton
-                                            icon={getSortIcon('name')}
-                                            size={16}
-                                            style={styles.sortIcon}
-                                        />
+                                        <IconButton icon={getSortIcon('name')} size={16} style={styles.sortIcon} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title
-                                    onPress={() => handleSort('category')}
-                                    style={{ flex: 1.2 }}
-                                >
+                                <DataTable.Title onPress={() => handleSort('category')} style={{ flex: 1.2 }}>
                                     <View style={styles.headerCell}>
                                         <Text>Categoria</Text>
-                                        <IconButton
-                                            icon={getSortIcon('category')}
-                                            size={16}
-                                            style={styles.sortIcon}
-                                        />
+                                        <IconButton icon={getSortIcon('category')} size={16} style={styles.sortIcon} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title
-                                    numeric
-                                    onPress={() => handleSort('price')}
-                                    style={{ flex: 1 }}
-                                >
+                                <DataTable.Title onPress={() => handleSort('price')} style={{ flex: 1 }}>
                                     <View style={styles.headerCell}>
                                         <Text>Preço</Text>
-                                        <IconButton
-                                            icon={getSortIcon('price')}
-                                            size={16}
-                                            style={styles.sortIcon}
-                                        />
+                                        <IconButton icon={getSortIcon('price')} size={16} style={styles.sortIcon} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title style={{ flex: 1 }}>Disponível</DataTable.Title>
-                                <DataTable.Title style={{ flex: 1 }}>Ações</DataTable.Title>
+                                <DataTable.Title style={{ flex: 1 }}>
+                                    <View style={styles.headerCell}><Text>Disponível</Text></View>
+                                </DataTable.Title>
+                                <DataTable.Title style={{ flex: 1 }}>
+                                    <View style={styles.headerCell}><Text>Ações</Text></View>
+                                </DataTable.Title>
                             </DataTable.Header>
 
                             {filteredProducts.map(product => (
@@ -900,22 +900,6 @@ export default function ProductsScreen() {
                     </ScrollView>
                 )}
 
-                {/* Filtros por categorias */}
-                {categories.length > 0 && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                        {categories.map((cat) => (
-                            <Chip
-                                key={cat.id}
-                                selected={activeCategories.includes(cat.name)}
-                                onPress={() => toggleCategoryFilter(cat.name)}
-                                icon={cat.icon || 'tag'}
-                                style={{ borderRadius: 999 }}
-                            >
-                                {cat.name}
-                            </Chip>
-                        ))}
-                    </View>
-                )}
             </View>
         </Provider>
     );

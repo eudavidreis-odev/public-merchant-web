@@ -1,5 +1,7 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Chip, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import type { Order } from '../../types';
 
 type Status = Order['status'];
@@ -9,67 +11,54 @@ interface OrderStatusChipProps {
     onPress?: () => void;
 }
 
-const statusStyles: Record<
-    Status,
-    {
-        icon: string;
-        color: string;
-        backgroundColor: string;
+function getStatusColors(_theme: ReturnType<typeof useTheme>, status: Status) {
+    // Paleta solicitada: ícone e texto na mesma cor específica
+    switch (status) {
+        case 'Criado':
+            return { icon: 'bell-outline', fg: '#9CA3AF', bg: '#F3F4F6' }; // Cinza
+        case 'Confirmado':
+            return { icon: 'check-circle-outline', fg: '#3B82F6', bg: '#EFF6FF' }; // Azul
+        case 'Preparando':
+            return { icon: 'pot-steam-outline', fg: '#F97316', bg: '#FFF7ED' }; // Laranja
+        case 'Pronto':
+            return { icon: 'check-all', fg: '#EAB308', bg: '#FEFCE8' }; // Amarelo
+        case 'Em entrega':
+            return { icon: 'moped-outline', fg: '#8B5CF6', bg: '#F5F3FF' }; // Roxo
+        case 'Entregue':
+            return { icon: 'package-variant-closed-check', fg: '#22C55E', bg: '#F0FDF4' }; // Verde
+        case 'Cancelado':
+            return { icon: 'close-circle-outline', fg: '#EF4444', bg: '#FEF2F2' }; // Vermelho
+        default:
+            return { icon: 'information-outline', fg: '#374151', bg: '#E5E7EB' }; // Neutro
     }
-> = {
-    Criado: {
-        icon: 'bell-outline',
-        color: '#f59e0b', // amber-500
-        backgroundColor: '#fefce8', // yellow-50
-    },
-    Confirmado: {
-        icon: 'check-circle-outline',
-        color: '#3b82f6', // blue-500
-        backgroundColor: '#eff6ff', // blue-50
-    },
-    Preparando: {
-        icon: 'pot-steam-outline',
-        color: '#3b82f6', // blue-500
-        backgroundColor: '#eff6ff', // blue-50
-    },
-    Pronto: {
-        icon: 'check-all',
-        color: '#16a34a', // green-600
-        backgroundColor: '#f0fdf4', // green-50
-    },
-    'Em entrega': {
-        icon: 'moped-outline',
-        color: '#16a34a', // green-600
-        backgroundColor: '#f0fdf4', // green-50
-    },
-    Entregue: {
-        icon: 'package-variant-closed-check',
-        color: '#16a34a', // green-600
-        backgroundColor: '#f0fdf4', // green-50
-    },
-    Cancelado: {
-        icon: 'close-circle-outline',
-        color: '#ef4444', // red-500
-        backgroundColor: '#fef2f2', // red-50
-    },
-};
+}
 
 const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
     status,
     onPress,
 }) => {
     const theme = useTheme();
-    const styles = statusStyles[status] || statusStyles['Criado'];
+    const c = getStatusColors(theme, status);
 
     return (
-        <Chip
-            icon={styles.icon}
-            onPress={onPress}
-            style={{ backgroundColor: styles.backgroundColor }}
-            textStyle={{ color: styles.color, fontWeight: 'bold' }}>
-            {status}
-        </Chip>
+        <View style={StyleSheet.flatten([styles.badge, { backgroundColor: c.bg }])}>
+            <MaterialCommunityIcons name={c.icon as any} size={16} color={c.fg} style={{ marginRight: 6 }} />
+            <Text style={[styles.text, { color: c.fg }]} onPress={onPress}>{status}</Text>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 999,
+    },
+    text: {
+        fontWeight: '700',
+    },
+});
 
 export default OrderStatusChip;
