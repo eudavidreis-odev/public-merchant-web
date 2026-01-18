@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
 import { DataTable, Text } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import OrderStatusChip from '../components/OrderStatusChip';
+import { CARD_PADDING } from '../constants/card';
 import * as OrdersService from '../services/orders';
 import type { Order } from '../types';
 
@@ -41,15 +43,16 @@ const ACTIVE_STATUSES: Order['status'][] = [
   'Em entrega',
 ];
 
-const KpiCard = ({ title, value }: { title: string; value: string }) => (
-  <View style={styles.kpiCard}>
+const KpiCard = ({ title, value, onPress }: { title: string; value: string; onPress?: () => void }) => (
+  <Pressable style={({ pressed }) => [styles.kpiCard, pressed && { opacity: 0.7 }]} onPress={onPress} android_ripple={{ color: '#eee' }}>
     <Text style={styles.kpiTitle}>{title}</Text>
     <Text style={styles.kpiValue}>{value}</Text>
-  </View>
+  </Pressable>
 );
 
 export default function DashboardScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const unsub = OrdersService.subscribeOrders(
@@ -99,41 +102,47 @@ export default function DashboardScreen() {
       </Text>
 
       {/* KPIs */}
-      <View style={styles.kpiRow}>
-        <KpiCard title="Faturamento (Hoje)" value={kpis.faturamentoDia} />
-        <KpiCard title="Pedidos Ativos" value={kpis.pedidosAtivos} />
-        <KpiCard title="Ticket Médio" value={kpis.ticketMedio} />
-        <KpiCard title="Pedidos (Hoje)" value={kpis.totalPedidos} />
+      <View style={styles.card}>
+        <View style={styles.kpiRow}>
+          <KpiCard title="Faturamento (Hoje)" value={kpis.faturamentoDia} onPress={() => router.push('/finance')} />
+          <KpiCard title="Pedidos Ativos" value={kpis.pedidosAtivos} onPress={() => router.push('/orders')} />
+          <KpiCard title="Ticket Médio" value={kpis.ticketMedio} onPress={() => router.push('/finance')} />
+          <KpiCard title="Pedidos (Hoje)" value={kpis.totalPedidos} onPress={() => router.push('/orders')} />
+        </View>
       </View>
 
       {/* Recent Orders */}
-      <View style={styles.section}>
+      <View style={[styles.card, { marginTop: 8 }]}>
         <Text style={styles.sectionTitle}>Pedidos Recentes</Text>
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title style={{ flex: 2 }}>Cliente / ID</DataTable.Title>
-            <DataTable.Title numeric>Valor</DataTable.Title>
-            <DataTable.Title style={{ flex: 1.2 }}>Status</DataTable.Title>
-            <DataTable.Title style={{ flex: 1.2 }}>Tempo</DataTable.Title>
-          </DataTable.Header>
-          {recentActive.map((o) => (
-            <DataTable.Row key={o.id}>
-              <DataTable.Cell style={{ flex: 2 }}>
-                <Text style={{ fontWeight: '600' }}>{o.customerName || 'Cliente'}</Text>
-                <Text style={{ color: '#6b7280' }}>#{o.id.substring(0, 6)}</Text>
-              </DataTable.Cell>
-              <DataTable.Cell numeric>
-                {formatBRLFromCentavos(o.total)}
-              </DataTable.Cell>
-              <DataTable.Cell style={{ flex: 1.2 }}>
-                <OrderStatusChip status={o.status} />
-              </DataTable.Cell>
-              <DataTable.Cell style={{ flex: 1.2 }}>
-                {formatDate(o.createdAt)}
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
-        </DataTable>
+        {recentActive.length === 0 ? (
+          <Text style={styles.emptyText}>Não há pedidos ativos no momento.</Text>
+        ) : (
+          <DataTable>
+            <DataTable.Header>
+              <DataTable.Title style={{ flex: 2 }}>Cliente / ID</DataTable.Title>
+              <DataTable.Title numeric>Valor</DataTable.Title>
+              <DataTable.Title style={{ flex: 1.2 }}>Status</DataTable.Title>
+              <DataTable.Title style={{ flex: 1.2 }}>Tempo</DataTable.Title>
+            </DataTable.Header>
+            {recentActive.map((o) => (
+              <DataTable.Row key={o.id}>
+                <DataTable.Cell style={{ flex: 2 }}>
+                  <Text style={{ fontWeight: '600' }}>{o.customerName || 'Cliente'}</Text>
+                  <Text style={{ color: '#6b7280' }}>#{o.id.substring(0, 6)}</Text>
+                </DataTable.Cell>
+                <DataTable.Cell numeric>
+                  {formatBRLFromCentavos(o.total)}
+                </DataTable.Cell>
+                <DataTable.Cell style={{ flex: 1.2 }}>
+                  <OrderStatusChip status={o.status} />
+                </DataTable.Cell>
+                <DataTable.Cell style={{ flex: 1.2 }}>
+                  {formatDate(o.createdAt)}
+                </DataTable.Cell>
+              </DataTable.Row>
+            ))}
+          </DataTable>
+        )}
       </View>
     </ScrollView>
   );
@@ -143,7 +152,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#f4f4f4',
+  },
+  card: {
     backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: CARD_PADDING,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    // Elevação/sombra
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   title: {
     marginBottom: 16,
@@ -183,5 +206,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 8,
+  },
+    emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    marginVertical: 24,
+    fontSize: 16,
   },
 });
