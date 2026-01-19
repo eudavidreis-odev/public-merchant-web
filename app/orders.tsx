@@ -16,6 +16,7 @@ import {
 import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
 import type { Order } from '../types';
+import './global.css';
 
 const ORDER_STATUSES: Order['status'][] = [
   'Criado',
@@ -481,6 +482,7 @@ function ConfirmStatusDialog({ visible, onDismiss, onConfirm, updating, order, n
   order?: Order;
   newStatus?: Order['status'];
 }) {
+  if (!visible) return null;
   return (
     <Portal>
       <View style={styles.dialogOverlay} pointerEvents={visible ? 'auto' : 'none'}>

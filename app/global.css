@@ -1,0 +1,9 @@
+/* Garante fundo branco puro em toda a aplicação web */
+html,
+body,
+#root,
+#__next {
+  background: #fff !important;
+  min-height: 100vh;
+  height: 100%;
+}
