@@ -14,7 +14,49 @@ function formatBRL(value: number) {
     return `R$ ${value.toFixed(2)}`;
 }
 
-export function useFinanceMetrics(merchantIdOverride?: string) {
+
+export type FinancePeriod = 'month' | 'today' | 'week' | '30d' | 'custom';
+export type CustomRange = { start: Date | null, end: Date | null };
+
+function getPeriodRange(period: FinancePeriod, customRange?: CustomRange): { start: Date, end: Date } {
+    const now = new Date();
+    let start: Date;
+    let end: Date = new Date(now);
+    switch (period) {
+        case 'today':
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+        case 'week':
+            start = new Date(now);
+            start.setDate(now.getDate() - now.getDay());
+            break;
+        case '30d':
+            start = new Date(now);
+            start.setDate(now.getDate() - 29);
+            break;
+        case 'custom':
+            if (customRange?.start && customRange?.end) {
+                start = new Date(customRange.start);
+                end = new Date(customRange.end);
+            } else {
+                start = new Date(now);
+            }
+            break;
+        case 'month':
+        default:
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+    }
+    // Ajuste para incluir o dia final inteiro
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+}
+
+export function useFinanceMetrics(
+    merchantIdOverride?: string,
+    period: FinancePeriod = 'month',
+    customRange?: CustomRange
+) {
     const [orders, setOrders] = useState<Order[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
 
@@ -40,49 +82,53 @@ export function useFinanceMetrics(merchantIdOverride?: string) {
         return () => unsub?.();
     }, [merchantIdOverride]);
 
-    const last30Days = useMemo(() => {
+    // Gera os dias do período selecionado
+    const daysInPeriod = useMemo(() => {
+        const { start, end } = getPeriodRange(period, customRange);
         const days: { key: string; label: string; date: Date }[] = [];
-        const now = new Date();
-        for (let i = 29; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(now.getDate() - i);
+        const d = new Date(start);
+        while (d <= end) {
             const label = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`;
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            days.push({ key, label, date: d });
+            days.push({ key, label, date: new Date(d) });
+            d.setDate(d.getDate() + 1);
         }
         return days;
-    }, []);
+    }, [period, customRange]);
 
     const revenueMonthly: RevenuePoint[] = useMemo(() => {
         const map: Record<string, number> = {};
-        for (const day of last30Days) map[day.key] = 0;
+        for (const day of daysInPeriod) map[day.key] = 0;
+
+        const { start, end } = getPeriodRange(period, customRange);
 
         orders.forEach((o) => {
             const created = o.createdAt?.toDate?.() ?? (o.createdAt as any);
             if (!created) return;
+            if (created < start || created > end) return;
             const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
             if (!(key in map)) return;
             if (!SUCCESS_STATUSES.includes(o.status)) return;
             map[key] += (o.total ?? 0) / 100; // total em reais
         });
 
-        return last30Days.map((d) => ({
+        return daysInPeriod.map((d) => ({
             label: d.label,
             value: map[d.key] || 0,
             dataPointText: formatBRL(map[d.key] || 0),
         }));
-    }, [orders, last30Days]);
+    }, [orders, daysInPeriod, period, customRange]);
 
     const categoryRanking: CategoryPoint[] = useMemo(() => {
         if (!products.length) return [];
         const productByName = new Map<string, Product>();
         products.forEach((p) => productByName.set(p.name, p));
         const revenueByCategory = new Map<string, number>();
-        const since = new Date(); since.setDate(since.getDate() - 30);
+        const { start, end } = getPeriodRange(period, customRange);
 
         orders.forEach((o) => {
             const created = o.createdAt?.toDate?.() ?? (o.createdAt as any);
-            if (!created || created < since) return;
+            if (!created || created < start || created > end) return;
             if (!SUCCESS_STATUSES.includes(o.status)) return;
             o.items.forEach((it) => {
                 const p = productByName.get(it.name);
@@ -97,18 +143,18 @@ export function useFinanceMetrics(merchantIdOverride?: string) {
             .map(([label, value], idx) => ({ label, value, frontColor: palette[idx % palette.length] }))
             .sort((a, b) => b.value - a.value);
         return entries;
-    }, [orders, products]);
+    }, [orders, products, period, customRange]);
 
     const menuMatrix: MenuItemPoint[] = useMemo(() => {
         if (!products.length) return [];
         const productByName = new Map<string, Product>();
         products.forEach((p) => productByName.set(p.name, p));
-        const since = new Date(); since.setDate(since.getDate() - 30);
+        const { start, end } = getPeriodRange(period, customRange);
 
         const agg = new Map<string, { name: string; revenue: number; volume: number }>();
         orders.forEach((o) => {
             const created = o.createdAt?.toDate?.() ?? (o.createdAt as any);
-            if (!created || created < since) return;
+            if (!created || created < start || created > end) return;
             if (!SUCCESS_STATUSES.includes(o.status)) return;
             o.items.forEach((it) => {
                 const p = productByName.get(it.name);
@@ -139,7 +185,7 @@ export function useFinanceMetrics(merchantIdOverride?: string) {
         }).sort((a, b) => b.revenue - a.revenue);
 
         return typed;
-    }, [orders, products]);
+    }, [orders, products, period, customRange]);
 
     return {
         revenueMonthly,

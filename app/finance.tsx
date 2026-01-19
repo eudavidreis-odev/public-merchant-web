@@ -1,24 +1,50 @@
+import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Button, Menu, Text } from 'react-native-paper';
 import CategoryRanking from '../components/charts/CategoryRanking';
 import MenuMatrix from '../components/charts/MenuMatrix';
 import RevenueChart from '../components/charts/RevenueChart';
 import { CARD_PADDING } from '../constants/card';
-import { useFinanceMetrics } from '../services/finance';
+import { CustomRange, FinancePeriod, useFinanceMetrics } from '../services/finance';
 
 export default function FinanceScreen() {
-  const { revenueMonthly, categoryRanking, menuMatrix } = useFinanceMetrics();
+  const [period, setPeriod] = React.useState<FinancePeriod>('month');
+  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [customRange, setCustomRange] = React.useState<CustomRange>({ start: null, end: null });
+
+  // Hook agora recebe period/customRange
+  const { revenueMonthly, categoryRanking, menuMatrix } = useFinanceMetrics(undefined, period, customRange);
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text variant="displayMedium">Análise Financeira</Text>
         <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
-          Veja métricas financeiras, receitas e rankings dos últimos 30 dias.
+          Veja métricas financeiras, receitas e rankings do período selecionado.
         </Text>
-        <Text variant="headlineSmall">Período: Últimos 30 dias</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            anchor={<Button mode="outlined" compact onPress={() => setMenuVisible(true)}>{
+              period === 'month' ? 'Este mês'
+                : period === 'today' ? 'Hoje'
+                  : period === 'week' ? 'Esta semana'
+                    : period === '30d' ? 'Últimos 30 dias'
+                      : (customRange.start && customRange.end) ? `${customRange.start.toLocaleDateString()} - ${customRange.end.toLocaleDateString()}`
+                        : 'Período'
+            }</Button>}
+          >
+            <Menu.Item onPress={() => { setPeriod('month'); setMenuVisible(false); }} title="Este mês" />
+            <Menu.Item onPress={() => { setPeriod('today'); setMenuVisible(false); }} title="Hoje" />
+            <Menu.Item onPress={() => { setPeriod('week'); setMenuVisible(false); }} title="Esta semana" />
+            <Menu.Item onPress={() => { setPeriod('30d'); setMenuVisible(false); }} title="Últimos 30 dias" />
+            <Menu.Item onPress={() => { setPeriod('custom'); setMenuVisible(false); setCustomRange({ start: new Date(), end: new Date() }); }} title="Período personalizado" />
+          </Menu>
+        </View>
       </View>
 
-      {/* Receita nos últimos 30 dias */}
+      {/* Receita no período */}
       <RevenueChart data={revenueMonthly} />
 
       {/* Ranking de categorias */}
