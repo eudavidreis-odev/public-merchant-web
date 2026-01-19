@@ -7,3 +7,12 @@ body,
   min-height: 100vh;
   height: 100%;
 }
+
+/* Datepicker popper sempre acima dos cards e labels */
+.datepicker-popper {
+  z-index: 2147483647 !important;
+}
+
+.datepicker-wrapper {
+  z-index: 1;
+}

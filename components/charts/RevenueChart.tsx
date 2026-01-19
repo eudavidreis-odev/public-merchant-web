@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
@@ -10,10 +10,10 @@ const SPACING = 60;
 const INITIAL_SPACING = 20;
 const Y_AXIS_WIDTH = 50
 const TOOLTIP_WIDTH = 120;
-const TOOLTIP_HEIGHT = 80; 
+const TOOLTIP_HEIGHT = 80;
 
 // AJUSTE VERTICAL (sobe o balão)
-const OFFSET_Y = -130; 
+const OFFSET_Y = -130;
 
 // --- NOVO: CALIBRAÇÃO FINA DA SETA ---
 // Se a seta está para a direita, coloque um valor negativo (ex: -2, -4, -10)
@@ -28,7 +28,7 @@ type RevenueChartProps = {
 const aggregateDataByDate = (rawData: RevenuePoint[]) => {
     const groupedMap = new Map<string, number>();
     rawData.forEach((item) => {
-        const dateKey = item.label; 
+        const dateKey = item.label;
         const currentTotal = groupedMap.get(dateKey) || 0;
         groupedMap.set(dateKey, currentTotal + item.value);
     });
@@ -40,6 +40,10 @@ const aggregateDataByDate = (rawData: RevenuePoint[]) => {
 
 export default function RevenueChart({ data, title = 'Evolução da Receita' }: RevenueChartProps) {
     const chartRef = useRef<any>(null);
+    const dragWrapperRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartX = useRef<number | null>(null);
+    const dragStartScroll = useRef<number | null>(null);
     const { width: screenWidth } = useWindowDimensions();
 
     const aggregatedData = useMemo(() => {
@@ -66,43 +70,115 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
         }
     }, [aggregatedData]);
 
-    const visibleChartWidth = screenWidth - (CARD_PADDING * 2) - Y_AXIS_WIDTH - 20;
+    // Cálculo da largura visível estrita
+    // Ajuste extra para garantir que não vaze: 8px
+    const ADJUST_EXTRA = 8;
+    const visibleChartWidth = Math.min(
+        screenWidth - (CARD_PADDING * 2) - Y_AXIS_WIDTH - ADJUST_EXTRA,
+        screenWidth
+    );
+
+    // Spacing fixo para teste
+    const dynamicSpacing = 60;
+    const initialSpacing = INITIAL_SPACING;
+    const endSpacing = SPACING;
+
+    // --- Drag logic para Web ---
+    // Só ativa no ambiente Web
+    const isWeb = Platform.OS === 'web';
+
+    // Funções de arraste
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isWeb) return;
+        setIsDragging(true);
+        dragStartX.current = e.pageX;
+        // O elemento de scroll é o scrollRef.current (div interna do gifted-charts)
+        if (chartRef.current && chartRef.current.scrollLeft !== undefined) {
+            dragStartScroll.current = chartRef.current.scrollLeft;
+        } else if (dragWrapperRef.current) {
+            dragStartScroll.current = dragWrapperRef.current.scrollLeft;
+        }
+    };
+
+    const handleMouseUp = () => {
+        if (!isWeb) return;
+        setIsDragging(false);
+        dragStartX.current = null;
+        dragStartScroll.current = null;
+    };
+
+    const handleMouseLeave = () => {
+        if (!isWeb) return;
+        setIsDragging(false);
+        dragStartX.current = null;
+        dragStartScroll.current = null;
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isWeb || !isDragging || dragStartX.current === null || dragStartScroll.current === null) return;
+        const deltaX = dragStartX.current - e.pageX;
+        // Manipula scroll do elemento correto
+        if (chartRef.current && chartRef.current.scrollLeft !== undefined) {
+            chartRef.current.scrollLeft = dragStartScroll.current + deltaX;
+        } else if (dragWrapperRef.current) {
+            dragWrapperRef.current.scrollLeft = dragStartScroll.current + deltaX;
+        }
+    };
+
+    // Adiciona/remover listeners globais para mouseup (caso o usuário solte fora do container)
+    useEffect(() => {
+        if (!isWeb) return;
+        if (isDragging) {
+            window.addEventListener('mouseup', handleMouseUp);
+        } else {
+            window.removeEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, isWeb]);
 
     return (
         <View style={styles.container}>
             <Text variant="titleLarge" style={styles.title}>{title}</Text>
-            
-            <View style={styles.chartWrapper}>
+            {/* Wrapper extra para eventos de mouse no Web */}
+            <div
+                ref={dragWrapperRef}
+                style={{
+                    ...styles.chartWrapper,
+                    cursor: isWeb ? (isDragging ? 'grabbing' : 'grab') : undefined,
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+                onMouseMove={handleMouseMove}
+            >
                 <LineChart
                     scrollRef={chartRef}
                     data={dataForChart}
-                    
                     height={280}
                     width={visibleChartWidth}
-                    
-                    overflowTop={150} 
-                    
-                    spacing={SPACING}
-                    initialSpacing={INITIAL_SPACING}
-                    endSpacing={SPACING}
-                    
+                    overflowTop={150}
+                    spacing={dynamicSpacing}
+                    initialSpacing={initialSpacing}
+                    endSpacing={endSpacing}
                     color="#007BFF"
                     thickness={3}
                     startFillColor="rgba(0, 123, 255, 0.1)"
                     endFillColor="rgba(0, 123, 255, 0.01)"
                     areaChart
-                    isAnimated
-                    
+                    isAnimated={false}
                     yAxisLabelWidth={Y_AXIS_WIDTH}
                     yAxisTextStyle={{ color: 'gray', fontSize: 10 }}
                     xAxisLabelTextStyle={{ color: 'gray', width: 80, fontSize: 10 }}
                     yAxisThickness={0}
                     rulesType="solid"
                     rulesColor="#f0f0f0"
-                    
                     textFontSize={12}
                     textColor="#333"
-
+                    yAxisIsFixed={true}
+                    nestedScrollEnabled={true}
+                    disableScroll={false}
                     pointerConfig={{
                         pointerStripUptoDataPoint: true,
                         pointerColor: 'transparent',
@@ -112,13 +188,10 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         snapToPoint: true,
                         activatePointersOnLongPress: false,
                         autoAdjustPointerLabelPosition: false,
-
                         pointerLabelWidth: TOOLTIP_WIDTH,
                         pointerLabelHeight: TOOLTIP_HEIGHT,
-                        
                         shiftPointerLabelX: 0,
-                        shiftPointerLabelY: 0, 
-                        
+                        shiftPointerLabelY: 0,
                         pointerLabelComponent: (items: any) => {
                             const item = items[0];
                             return (
@@ -137,10 +210,11 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         },
                     }}
                 />
-            </View>
+            </div>
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
@@ -170,14 +244,16 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     chartWrapper: {
-        overflow: 'visible',
+        width: '100%',
+        overflow: 'hidden',
         paddingVertical: 10,
-        paddingTop: 40, 
+        paddingTop: 40,
+        // cursor será sobrescrito inline no Web
     },
     tooltipContainer: {
         width: TOOLTIP_WIDTH,
         // Garante que os filhos (bolha e seta) sejam centralizados
-        alignItems: 'center', 
+        alignItems: 'center',
         transform: [
             { translateX: -(TOOLTIP_WIDTH / 2) },
             { translateY: OFFSET_Y }
@@ -220,7 +296,7 @@ const styles = StyleSheet.create({
         borderRightColor: 'transparent',
         borderTopColor: '#1a1a1a',
         marginTop: -1,
-        
+
         // --- APLICAÇÃO DA CALIBRAÇÃO ---
         alignSelf: 'center', // Reforça a centralização
         transform: [{ translateX: ARROW_X_ADJUST }] // Move apenas a seta pixel a pixel

@@ -4,8 +4,10 @@ import { Button, Menu, Text } from 'react-native-paper';
 import CategoryRanking from '../components/charts/CategoryRanking';
 import MenuMatrix from '../components/charts/MenuMatrix';
 import RevenueChart from '../components/charts/RevenueChart';
+import DateRangePicker from '../components/DateRangePicker';
 import { CARD_PADDING } from '../constants/card';
 import { CustomRange, FinancePeriod, useFinanceMetrics } from '../services/finance';
+import { palette } from '../styles/theme';
 
 export default function FinanceScreen() {
   const [period, setPeriod] = React.useState<FinancePeriod>('month');
@@ -26,14 +28,20 @@ export default function FinanceScreen() {
           <Menu
             visible={menuVisible}
             onDismiss={() => setMenuVisible(false)}
-            anchor={<Button mode="outlined" compact onPress={() => setMenuVisible(true)}>{
-              period === 'month' ? 'Este mês'
+            anchor={<Button
+              mode="outlined"
+              compact
+              onPress={() => setMenuVisible(true)}
+              style={{ borderColor: palette.info }}
+              labelStyle={{ color: palette.info }}
+            >
+              {period === 'month' ? 'Este mês'
                 : period === 'today' ? 'Hoje'
                   : period === 'week' ? 'Esta semana'
                     : period === '30d' ? 'Últimos 30 dias'
-                      : (customRange.start && customRange.end) ? `${customRange.start.toLocaleDateString()} - ${customRange.end.toLocaleDateString()}`
-                        : 'Período'
-            }</Button>}
+                      : period === 'custom' ? 'Período personalizado'
+                        : 'Período'}
+            </Button>}
           >
             <Menu.Item onPress={() => { setPeriod('month'); setMenuVisible(false); }} title="Este mês" />
             <Menu.Item onPress={() => { setPeriod('today'); setMenuVisible(false); }} title="Hoje" />
@@ -42,6 +50,13 @@ export default function FinanceScreen() {
             <Menu.Item onPress={() => { setPeriod('custom'); setMenuVisible(false); setCustomRange({ start: new Date(), end: new Date() }); }} title="Período personalizado" />
           </Menu>
         </View>
+        {period === 'custom' && (
+          <DateRangePicker
+            start={customRange.start}
+            end={customRange.end}
+            onChange={setCustomRange}
+          />
+        )}
       </View>
 
       {/* Receita no período */}
