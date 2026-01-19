@@ -4,6 +4,7 @@ import { KeyboardGestureArea, KeyboardProvider, KeyboardStickyView } from 'react
 import { ActivityIndicator, IconButton, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ChatService from '../../services/chat';
+import { typography } from '../../styles/theme';
 import MessageBubble from './MessageBubble';
 
 interface ChatProps {
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         paddingHorizontal: 16,
         paddingVertical: 10,
-        fontSize: 16,
+        fontSize: typography.heading5,
         maxHeight: 100,
         marginRight: 8,
     },

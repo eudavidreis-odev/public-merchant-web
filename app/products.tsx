@@ -20,6 +20,7 @@ import {
 } from 'react-native-paper';
 import * as CategoriesService from '../services/categories';
 import * as ProductsService from '../services/products';
+import { textSpacing, typography } from '../styles/theme';
 import { Category, Product } from '../types';
 
 // Constrói URI de imagem a partir de base64 + mime (compatível com dados do cliente)
@@ -438,7 +439,7 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                                         <Button mode="outlined" onPress={pickImage} disabled={imageLoading} loading={imageLoading} icon="image">
                                             {image ? 'Trocar imagem' : imageLoading ? 'Carregando...' : 'Selecionar imagem'}
                                         </Button>
-                                        <HelperText type="info" visible={true} style={{ fontSize: 12, opacity: 0.7 }}>
+                                        <HelperText type="info" visible={true} style={{ fontSize: typography.body, opacity: 0.7 }}>
                                             💡 Imagem quadrada (1:1) melhora a exibição em listas, cards e miniaturas.
                                             Tamanhos sugeridos: 800x800px ou 1024x1024px. Evite formatos retangulares para evitar cortes.
                                         </HelperText>
@@ -508,7 +509,7 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                                     <Button mode="outlined" onPress={pickImage} disabled={imageLoading} loading={imageLoading}>
                                         {imageLoading ? 'Carregando...' : 'Selecionar Imagem'}
                                     </Button>
-                                    <HelperText type="info" visible={true} style={{ fontSize: 12, opacity: 0.7 }}>
+                                    <HelperText type="info" visible={true} style={{ fontSize: typography.body, opacity: 0.7 }}>
                                         💡 Imagem quadrada (1:1) melhora a exibição em listas, cards e miniaturas.
                                         Tamanhos sugeridos: 800x800px ou 1024x1024px. Evite formatos retangulares para evitar cortes.
                                     </HelperText>
@@ -730,8 +731,8 @@ export default function ProductsScreen() {
             <View style={styles.container}>
                 <View style={styles.header}>
                     <View>
-                        <Text variant="displayMedium">Produtos</Text>
-                        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+                        <Text style={styles.title}>Produtos</Text>
+                        <Text style={styles.subtitle}>
                             Gerencie seu catálogo: crie, edite e remova produtos.
                         </Text>
                     </View>
@@ -915,6 +916,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 24,
+    },
+    title: {
+        fontSize: typography.pageTitle,
+        fontWeight: '700',
+        marginBottom: textSpacing.pageTitle,
+    },
+    subtitle: {
+        fontSize: typography.cardDescription,
+        opacity: 0.8,
+        marginTop: 4,
+        marginBottom: textSpacing.cardDescription,
     },
     modalContainer: {
         flex: 1,

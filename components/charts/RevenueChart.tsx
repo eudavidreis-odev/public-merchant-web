@@ -4,7 +4,7 @@ import { LineChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
 import { CARD_PADDING } from '../../constants/card';
 import type { RevenuePoint } from '../../services/finance';
-import { palette } from '../../styles/theme';
+import { palette, textSpacing, typography } from '../../styles/theme';
 
 // --- CONFIGURAÇÕES VISUAIS ---
 const SPACING = 60;
@@ -163,12 +163,12 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         areaChart
                         isAnimated={false}
                         yAxisLabelWidth={Y_AXIS_WIDTH}
-                        yAxisTextStyle={{ color: palette.gray600, fontSize: 12 }}
-                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: 12 }}
+                        yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
+                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: typography.body }}
                         yAxisThickness={0}
                         rulesType="solid"
                         rulesColor={palette.gray200}
-                        textFontSize={12}
+                        textFontSize={typography.body}
                         textColor={palette.gray900}
                         yAxisIsFixed={true}
                         nestedScrollEnabled={true}
@@ -219,12 +219,12 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         areaChart
                         isAnimated={false}
                         yAxisLabelWidth={Y_AXIS_WIDTH}
-                        yAxisTextStyle={{ color: palette.gray600, fontSize: 12 }}
-                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: 12 }}
+                        yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
+                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: typography.body }}
                         yAxisThickness={0}
                         rulesType="solid"
                         rulesColor={palette.gray200}
-                        textFontSize={12}
+                        textFontSize={typography.body}
                         textColor={palette.gray900}
                         yAxisIsFixed={true}
                         nestedScrollEnabled={true}
@@ -288,17 +288,17 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     title: {
-        fontSize: 20,
+        fontSize: typography.cardTitle,
         fontWeight: '700',
         color: palette.gray900,
-        marginBottom: 2,
+        marginBottom: textSpacing.cardTitle,
         letterSpacing: 0.1,
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: typography.cardDescription,
         color: palette.gray700,
         opacity: 0.85,
-        marginBottom: 8,
+        marginBottom: textSpacing.cardDescription,
     },
     chartWrapper: {
         width: '100%',
@@ -326,14 +326,14 @@ const styles = StyleSheet.create({
     },
     tooltipLabel: {
         color: '#ccc',
-        fontSize: 10,
+        fontSize: typography.caption,
         marginBottom: 2,
         textAlign: 'center',
     },
     tooltipValue: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 12,
+        fontSize: typography.body,
         textAlign: 'center',
     },
     tooltipArrow: {

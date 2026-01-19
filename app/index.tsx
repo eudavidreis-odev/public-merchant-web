@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
-import { DataTable, Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { DataTable, Text } from 'react-native-paper';
 import OrderStatusChip from '../components/OrderStatusChip';
 import { CARD_PADDING } from '../constants/card';
 import * as OrdersService from '../services/orders';
+import { textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
 
 function formatBRLFromCentavos(total_centavos: number): string {
@@ -97,7 +98,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Dashboard</Text>
-      <Text style={{ opacity: 0.7, marginBottom: 16 }}>
+      <Text style={{ opacity: 0.7, marginBottom: 16, fontSize: typography.subtitle }}>
         Visão geral do desempenho do seu negócio em tempo real.
       </Text>
 
@@ -169,8 +170,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    marginBottom: 16,
-    fontSize: 26,
+    marginBottom: textSpacing.pageTitle,
+    fontSize: typography.pageTitle,
     fontWeight: '700',
   },
   kpiRow: {
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   kpiValue: {
-    fontSize: 22,
+    fontSize: typography.heading3,
     fontWeight: '700',
     color: '#111827',
   },
@@ -203,14 +204,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: typography.cardTitle,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: textSpacing.cardTitle,
   },
-    emptyText: {
+  emptyText: {
     textAlign: 'center',
     color: '#888',
     marginVertical: 24,
-    fontSize: 16,
+    fontSize: typography.heading5,
   },
 });

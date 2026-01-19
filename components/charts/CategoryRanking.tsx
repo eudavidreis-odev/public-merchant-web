@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { CARD_PADDING } from '../../constants/card';
 import type { CategoryPoint } from '../../services/finance';
+import { textSpacing, typography } from '../../styles/theme';
 
 type Props = { data: CategoryPoint[] };
 
@@ -14,10 +15,10 @@ export default function CategoryRanking({ data }: Props) {
   return (
     <Card style={styles.container}>
       <Card.Content style={styles.header}>
-        <Text variant="titleLarge" style={styles.title}>
+        <Text style={styles.title}>
           Ranking de Categorias (Faturamento)
         </Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
+        <Text style={styles.subtitle}>
           {data.length > 0
             ? `Total no período: R$ ${totalValue.toFixed(2)} • ${data.length} categorias`
             : 'Sem dados de faturamento por categoria no período.'}
@@ -76,10 +77,14 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   title: {
-    marginBottom: 2,
+    marginBottom: textSpacing.cardTitle,
+    fontSize: typography.cardTitle,
+    fontWeight: '700',
   },
   subtitle: {
     opacity: 0.7,
+    fontSize: typography.cardDescription,
+    marginBottom: textSpacing.cardDescription,
   },
   content: {
     paddingTop: 0,

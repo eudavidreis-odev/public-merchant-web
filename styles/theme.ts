@@ -55,12 +55,28 @@ export const lightTheme = {
     typography: {
         fontFamily: 'System',
         sizes: {
+            // atomic sizes (kept for backward compatibility)
             xs: 12,
             sm: 14,
             md: 16,
             lg: 20,
             xl: 24,
             xxl: 32,
+            // semantic sizes for app-wide consistency
+            caption: 10,
+            body: 12,
+            helper: 12,
+            subtitle: 14,
+            title: 20,
+            // semantic aliases
+            pageTitle: 26,
+            cardTitle: 20,
+            cardDescription: 14,
+            heading5: 16,
+            heading4: 18,
+            heading3: 22,
+            heading2: 26,
+            heading1: 32,
         },
         lineHeight: {
             tight: 1.1,
@@ -85,3 +101,13 @@ export const darkTheme: typeof lightTheme = {
 };
 
 export type AppTheme = typeof lightTheme;
+
+// Conveniência: exportar tamanhos tipográficos para importação direta
+export const typography = lightTheme.typography.sizes;
+
+// Espaçamentos semânticos para títulos e descrições
+export const textSpacing = {
+    pageTitle: 16,
+    cardTitle: 8,
+    cardDescription: 6,
+} as const;

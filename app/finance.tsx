@@ -7,7 +7,7 @@ import RevenueChart from '../components/charts/RevenueChart';
 import DateRangePicker from '../components/DateRangePicker';
 import { CARD_PADDING } from '../constants/card';
 import { CustomRange, FinancePeriod, useFinanceMetrics } from '../services/finance';
-import { palette } from '../styles/theme';
+import { palette, textSpacing, typography } from '../styles/theme';
 
 
 export default function FinanceScreen() {
@@ -57,8 +57,8 @@ export default function FinanceScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text variant="displayMedium">Análise Financeira</Text>
-        <Text variant="bodyMedium" style={{ opacity: 0.7, marginTop: 4 }}>
+        <Text style={styles.title}>Análise Financeira</Text>
+        <Text style={styles.subtitle}>
           Veja métricas financeiras, receitas e rankings do período selecionado.
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
@@ -117,5 +117,16 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+  },
+  title: {
+    fontSize: typography.pageTitle,
+    fontWeight: '700',
+    marginBottom: textSpacing.pageTitle,
+  },
+  subtitle: {
+    fontSize: typography.cardDescription,
+    opacity: 0.8,
+    marginTop: 4,
+    marginBottom: textSpacing.cardDescription,
   },
 });

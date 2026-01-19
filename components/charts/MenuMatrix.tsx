@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { Avatar, Card, Chip, List } from 'react-native-paper';
 import { CARD_PADDING } from '../../constants/card';
 import type { MenuItemPoint } from '../../services/finance';
+import { textSpacing, typography } from '../../styles/theme';
 
 const getIconForType = (type: string) => {
   switch (type) {
@@ -27,6 +28,8 @@ export default function MenuMatrix({ items }: Props) {
       <Card.Title
         title="Engenharia de Cardápio"
         subtitle="Identifique seus produtos chave"
+        titleStyle={{ fontSize: typography.cardTitle, fontWeight: '700', marginBottom: textSpacing.cardTitle }}
+        subtitleStyle={{ fontSize: typography.cardDescription, opacity: 0.85, marginBottom: textSpacing.cardDescription }}
       />
       <Card.Content>
         <List.Section>

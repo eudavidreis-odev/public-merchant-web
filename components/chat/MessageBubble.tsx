@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import { typography } from '../../styles/theme';
 
 export default function MessageBubble({ text, isOwn, createdAt }: { text: string; isOwn?: boolean; createdAt?: any }) {
     const theme = useTheme();
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     labelText: {
-        fontSize: 12,
+        fontSize: typography.helper,
         marginBottom: 4,
         paddingHorizontal: 4,
     },
@@ -68,11 +69,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
     },
     text: {
-        fontSize: 16,
+        fontSize: typography.heading5,
         lineHeight: 22,
     },
     timestamp: {
-        fontSize: 11,
+        fontSize: typography.caption,
         alignSelf: 'flex-end',
         marginTop: 4,
     },

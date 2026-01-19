@@ -4,6 +4,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import ptBR from '../config/datepickerLocale';
+import { typography } from '../styles/theme';
 
 export type DateModalPickerProps = {
     label: string;
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: 'bold',
-        fontSize: 18,
+        fontSize: typography.heading4,
         marginBottom: 12,
     },
     closeBtn: {

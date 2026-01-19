@@ -15,6 +15,7 @@ import {
 } from 'react-native-paper';
 import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
+import { textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
 import './global.css';
 
@@ -537,8 +538,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    marginBottom: 12,
-    fontSize: 26,
+    marginBottom: textSpacing.pageTitle,
+    fontSize: typography.pageTitle,
     fontWeight: '700',
   },
   tabsContainer: {
