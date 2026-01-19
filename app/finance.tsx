@@ -9,10 +9,47 @@ import { CARD_PADDING } from '../constants/card';
 import { CustomRange, FinancePeriod, useFinanceMetrics } from '../services/finance';
 import { palette } from '../styles/theme';
 
+
 export default function FinanceScreen() {
   const [period, setPeriod] = React.useState<FinancePeriod>('month');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [customRange, setCustomRange] = React.useState<CustomRange>({ start: null, end: null });
+
+  // Chaves para persistência
+  const PERIOD_KEY = 'finance_period';
+  const RANGE_KEY = 'finance_custom_range';
+
+  // Carregar do localStorage ao montar
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedPeriod = window.localStorage.getItem(PERIOD_KEY) as FinancePeriod | null;
+    if (savedPeriod) setPeriod(savedPeriod);
+    const savedRange = window.localStorage.getItem(RANGE_KEY);
+    if (savedRange) {
+      try {
+        const parsed = JSON.parse(savedRange);
+        setCustomRange({
+          start: parsed.start ? new Date(parsed.start) : null,
+          end: parsed.end ? new Date(parsed.end) : null,
+        });
+      } catch { }
+    }
+  }, []);
+
+  // Salvar period no localStorage ao mudar
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(PERIOD_KEY, period);
+  }, [period]);
+
+  // Salvar customRange no localStorage ao mudar
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(RANGE_KEY, JSON.stringify({
+      start: customRange.start ? customRange.start.toISOString() : null,
+      end: customRange.end ? customRange.end.toISOString() : null,
+    }));
+  }, [customRange]);
 
   // Hook agora recebe period/customRange
   const { revenueMonthly, categoryRanking, menuMatrix } = useFinanceMetrics(undefined, period, customRange);

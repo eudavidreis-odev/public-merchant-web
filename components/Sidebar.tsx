@@ -17,7 +17,7 @@ export default function Sidebar() {
   return (
     <View style={styles.sidebar}>
       <View style={styles.brandBox}>
-        <Text style={styles.brandTitle}>Lancheria Merchant</Text>
+        <Text style={styles.brandTitle}>Lancheria Lojista</Text>
       </View>
       <List.Section>
         {menuItems.map((item) => {
