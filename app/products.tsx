@@ -20,7 +20,7 @@ import {
 } from 'react-native-paper';
 import * as CategoriesService from '../services/categories';
 import * as ProductsService from '../services/products';
-import { textSpacing, typography } from '../styles/theme';
+import { spacing, textSpacing, typography } from '../styles/theme';
 import { Category, Product } from '../types';
 
 // Constrói URI de imagem a partir de base64 + mime (compatível com dados do cliente)
@@ -147,9 +147,9 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
                         subtitle="Crie, edite e exclua categorias. Excluir pode afetar produtos vinculados."
                     />
                     <Card.Content>
-                        <ScrollView style={{ maxHeight: modalMaxHeight - 140 }} contentContainerStyle={{ paddingBottom: 16 }}>
+                        <ScrollView style={{ maxHeight: modalMaxHeight - 140 }} contentContainerStyle={{ paddingBottom: spacing.md }}>
                             {categories.length > 0 && (
-                                <View style={{ marginBottom: 12 }}>
+                                <View style={{ marginBottom: spacing.md }}>
                                     <Text variant="labelLarge" style={{ marginBottom: 8 }}>Categorias existentes</Text>
                                     <ScrollView style={{ maxHeight: 200 }}>
                                         {categories.map(c => (
@@ -193,7 +193,7 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
                                     >
                                         Nova categoria
                                     </Button>
-                                    <Divider style={{ marginVertical: 12 }} />
+                                    <Divider style={{ marginVertical: spacing.md }} />
                                 </View>
                             )}
                             <TextInput
@@ -201,10 +201,10 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
                                 mode="outlined"
                                 value={name}
                                 onChangeText={setName}
-                                style={{ marginBottom: 16 }}
+                                style={{ marginBottom: spacing.lg }}
                             />
 
-                            <Text variant="labelLarge" style={{ marginBottom: 8 }}>Selecione um Ícone:</Text>
+                            <Text variant="labelLarge" style={{ marginBottom: spacing.sm }}>Selecione um Ícone:</Text>
                             <View style={styles.iconGrid}>
                                 {AVAILABLE_ICONS.map((icon) => (
                                     <Chip
@@ -427,13 +427,13 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                     />
                     {isWide ? (
                         <Card.Content style={{ paddingBottom: 0 }}>
-                            <ScrollView style={{ maxHeight: modalMaxHeight - 160 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-                                <View style={[styles.formRow, { gap: 24 }]}>
+                            <ScrollView style={{ maxHeight: modalMaxHeight - 160 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.sm }}>
+                                <View style={[styles.formRow, { gap: spacing.xl }]}>
                                     <View style={[styles.formColumn, { maxWidth: 320 }]}>
                                         {image ? (
                                             <View style={styles.imagePreviewContainer}>
                                                 <Image source={{ uri: image }} style={[styles.previewImageLarge, { alignSelf: 'flex-start', maxWidth: 300 }]} />
-                                                <Button onPress={() => setImage(null)} style={{ marginTop: 8 }}>Remover Imagem</Button>
+                                                <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>Remover Imagem</Button>
                                             </View>
                                         ) : null}
                                         <Button mode="outlined" onPress={pickImage} disabled={imageLoading} loading={imageLoading} icon="image">
@@ -444,10 +444,10 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                                             Tamanhos sugeridos: 800x800px ou 1024x1024px. Evite formatos retangulares para evitar cortes.
                                         </HelperText>
                                     </View>
-                                    <View style={[styles.formColumn, { paddingLeft: 16 }]}>
-                                        <TextInput label="Nome do Produto" mode="outlined" value={name} onChangeText={setName} style={{ marginBottom: 8 }} />
-                                        <TextInput label="Descrição (multilinha)" mode="outlined" multiline numberOfLines={4} value={description} onChangeText={setDescription} style={{ marginBottom: 8 }} />
-                                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <View style={[styles.formColumn, { paddingLeft: spacing.lg }]}>
+                                        <TextInput label="Nome do Produto" mode="outlined" value={name} onChangeText={setName} style={{ marginBottom: spacing.sm }} />
+                                        <TextInput label="Descrição (multilinha)" mode="outlined" multiline numberOfLines={4} value={description} onChangeText={setDescription} style={{ marginBottom: spacing.sm }} />
+                                        <View style={{ flexDirection: 'row', gap: spacing.md }}>
                                             <TextInput
                                                 label="Preço"
                                                 mode="outlined"
@@ -465,7 +465,7 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                                                     editable={false}
                                                     right={<TextInput.Icon icon="chevron-down" onPress={() => setCategoryPickerVisible(true)} />}
                                                 />
-                                                <Text variant="bodySmall" style={{ marginTop: 4, opacity: 0.7 }} onPress={() => onManageCategories()}>
+                                                <Text variant="bodySmall" style={{ marginTop: spacing.xs, opacity: 0.7 }} onPress={() => onManageCategories()}>
                                                     Gerenciar categorias
                                                 </Text>
                                             </View>
@@ -475,16 +475,16 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                             </ScrollView>
                         </Card.Content>
                     ) : (
-                        <ScrollView style={[styles.modalScrollView, { maxHeight: modalMaxHeight - 160 }]} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+                        <ScrollView style={[styles.modalScrollView, { maxHeight: modalMaxHeight - 160 }]} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.sm }}>
                             <Card.Content style={styles.formContent}>
                                 {image && (
                                     <View style={styles.imagePreviewContainer}>
                                         <Image source={{ uri: image }} style={styles.previewImageLarge} />
-                                        <Button onPress={() => setImage(null)} style={{ marginTop: 8 }}>Remover Imagem</Button>
+                                        <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>Remover Imagem</Button>
                                     </View>
                                 )}
-                                <TextInput label="Nome do Produto" mode="outlined" value={name} onChangeText={setName} style={{ marginBottom: 8 }} />
-                                <TextInput label="Descrição (multilinha)" mode="outlined" multiline numberOfLines={4} value={description} onChangeText={setDescription} style={{ marginBottom: 8 }} />
+                                <TextInput label="Nome do Produto" mode="outlined" value={name} onChangeText={setName} style={{ marginBottom: spacing.sm }} />
+                                <TextInput label="Descrição (multilinha)" mode="outlined" multiline numberOfLines={4} value={description} onChangeText={setDescription} style={{ marginBottom: spacing.sm }} />
                                 <TextInput
                                     label="Preço"
                                     mode="outlined"
@@ -501,11 +501,11 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                                         editable={false}
                                         right={<TextInput.Icon icon="chevron-down" onPress={() => setCategoryPickerVisible(true)} />}
                                     />
-                                    <Text variant="bodySmall" style={{ marginTop: 4, opacity: 0.7 }} onPress={() => onManageCategories()}>
+                                    <Text variant="bodySmall" style={{ marginTop: spacing.xs, opacity: 0.7 }} onPress={() => onManageCategories()}>
                                         Gerenciar categorias
                                     </Text>
                                 </View>
-                                <View style={{ marginTop: 16 }}>
+                                <View style={{ marginTop: spacing.lg }}>
                                     <Button mode="outlined" onPress={pickImage} disabled={imageLoading} loading={imageLoading}>
                                         {imageLoading ? 'Carregando...' : 'Selecionar Imagem'}
                                     </Button>
@@ -736,7 +736,7 @@ export default function ProductsScreen() {
                             Gerencie seu catálogo: crie, edite e remova produtos.
                         </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                         <Button
                             mode="outlined"
                             onPress={() => handleManageCategories()}
@@ -782,7 +782,7 @@ export default function ProductsScreen() {
                     <ScrollView>
                         {/* Filtros por categorias no topo */}
                         {categories.length > 0 && (
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                            <View style={styles.categoryChips}>
                                 {categories.map((cat) => (
                                     <Chip
                                         key={cat.id}
@@ -830,7 +830,7 @@ export default function ProductsScreen() {
                             {filteredProducts.map(product => (
                                 <DataTable.Row
                                     key={product.id}
-                                    style={[{ paddingVertical: 12 }, hoveredRowId === product.id ? styles.tableRowHover : null]}
+                                    style={[{ paddingVertical: spacing.md }, hoveredRowId === product.id ? styles.tableRowHover : null]}
                                     {...({
                                         onMouseEnter: () => setHoveredRowId(product.id),
                                         onMouseLeave: () => setHoveredRowId(null),
@@ -909,13 +909,13 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
+        padding: spacing.lg,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: spacing.xl,
     },
     title: {
         fontSize: typography.pageTitle,
@@ -925,14 +925,14 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: typography.cardDescription,
         opacity: 0.8,
-        marginTop: 4,
+        marginTop: spacing.xs,
         marginBottom: textSpacing.cardDescription,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: spacing.lg,
     },
     modalCard: {
         width: '100%',
@@ -950,7 +950,7 @@ const styles = StyleSheet.create({
     formRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 16,
+        gap: spacing.lg,
     },
     formColumn: {
         flex: 1,
@@ -960,12 +960,12 @@ const styles = StyleSheet.create({
         maxWidth: 500,
     },
     formContent: {
-        gap: 10,
-        paddingVertical: 10,
+        gap: spacing.md,
+        paddingVertical: spacing.md,
     },
     imagePreviewContainer: {
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: spacing.lg,
     },
     previewImageLarge: {
         width: '100%',
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyContainer: {
-        padding: 32,
+        padding: spacing.xxl,
         alignItems: 'center',
     },
     headerCell: {
@@ -1020,11 +1020,17 @@ const styles = StyleSheet.create({
     iconGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
+        gap: spacing.sm,
+        marginBottom: spacing.lg,
     },
     iconChip: {
-        marginBottom: 4,
+        marginBottom: spacing.xs,
+    },
+    categoryChips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
     },
     categoryRow: {
         flexDirection: 'row',

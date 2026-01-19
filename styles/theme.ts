@@ -107,7 +107,10 @@ export const typography = lightTheme.typography.sizes;
 
 // Espaçamentos semânticos para títulos e descrições
 export const textSpacing = {
-    pageTitle: 16,
-    cardTitle: 8,
+    pageTitle: 2,
+    cardTitle: 2,
     cardDescription: 6,
 } as const;
+
+// Conveniência: exportar espaçamentos (spacing) para importação direta
+export const spacing = lightTheme.spacing;

@@ -7,7 +7,7 @@ import RevenueChart from '../components/charts/RevenueChart';
 import DateRangePicker from '../components/DateRangePicker';
 import { CARD_PADDING } from '../constants/card';
 import { CustomRange, FinancePeriod, useFinanceMetrics } from '../services/finance';
-import { palette, textSpacing, typography } from '../styles/theme';
+import { palette, spacing, textSpacing, typography } from '../styles/theme';
 
 
 export default function FinanceScreen() {
@@ -61,7 +61,7 @@ export default function FinanceScreen() {
         <Text style={styles.subtitle}>
           Veja métricas financeiras, receitas e rankings do período selecionado.
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+        <View style={styles.periodRow}>
           <Menu
             visible={menuVisible}
             onDismiss={() => setMenuVisible(false)}
@@ -69,8 +69,8 @@ export default function FinanceScreen() {
               mode="outlined"
               compact
               onPress={() => setMenuVisible(true)}
-              style={{ borderColor: palette.info }}
-              labelStyle={{ color: palette.info }}
+              style={[styles.periodButton, { borderColor: palette.info }]}
+              labelStyle={[styles.periodButtonLabel, { color: palette.info }]}
             >
               {period === 'month' ? 'Este mês'
                 : period === 'today' ? 'Hoje'
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f4f4' // A slightly different background for the screen
   },
   header: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   title: {
     fontSize: typography.pageTitle,
@@ -126,7 +126,21 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: typography.cardDescription,
     opacity: 0.8,
-    marginTop: 4,
+    marginTop: spacing.xs,
     marginBottom: textSpacing.cardDescription,
+  },
+  periodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  periodButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  periodButtonLabel: {
+    color: palette.info,
   },
 });

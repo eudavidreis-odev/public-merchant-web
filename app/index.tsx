@@ -98,7 +98,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Dashboard</Text>
-      <Text style={{ opacity: 0.7, marginBottom: 16, fontSize: typography.subtitle }}>
+      <Text style={styles.subtitle}>
         Visão geral do desempenho do seu negócio em tempo real.
       </Text>
 
@@ -207,6 +207,11 @@ const styles = StyleSheet.create({
     fontSize: typography.cardTitle,
     fontWeight: '700',
     marginBottom: textSpacing.cardTitle,
+  },
+  subtitle: {
+    opacity: 0.7,
+    marginBottom: textSpacing.cardDescription,
+    fontSize: typography.subtitle,
   },
   emptyText: {
     textAlign: 'center',

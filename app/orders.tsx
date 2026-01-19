@@ -15,7 +15,7 @@ import {
 } from 'react-native-paper';
 import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
-import { textSpacing, typography } from '../styles/theme';
+import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
 import './global.css';
 
@@ -242,7 +242,7 @@ export default function OrdersScreen() {
     <>
       <ScrollView style={styles.container}>
         <Title style={styles.title}>Gerenciamento de Pedidos</Title>
-        <Text style={{ opacity: 0.7, marginBottom: 16 }}>
+        <Text style={styles.subtitle}>
           Acompanhe e gerencie os pedidos recebidos em tempo real.
         </Text>
 
@@ -269,7 +269,7 @@ export default function OrdersScreen() {
         </View>
 
         {/* Chips de filtro de status */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        <View style={styles.chipsContainer}>
           {ORDER_STATUSES.map((status) => (
             <OrderStatusChip
               key={status}
@@ -282,7 +282,7 @@ export default function OrdersScreen() {
                     : [...prev, status]
                 );
               }}
-              style={{ marginRight: 4, marginBottom: 4 }}
+              style={{ marginRight: spacing.xs, marginBottom: spacing.xs }}
             />
           ))}
           {activeStatuses.length > 0 && (
@@ -544,10 +544,16 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     gap: 8,
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.md,
   },
   tab: {
     paddingVertical: 8,
@@ -635,6 +641,11 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
+  },
+  subtitle: {
+    opacity: 0.7,
+    marginBottom: textSpacing.cardDescription,
+    fontSize: typography.subtitle,
   },
   noOrdersContainer: {
     padding: 20,
