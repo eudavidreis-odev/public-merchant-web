@@ -16,8 +16,10 @@ import {
     Provider,
     Switch,
     Text,
-    TextInput
+    TextInput,
+    useTheme
 } from 'react-native-paper';
+import { type ProductsSortDirection, type ProductsSortField, useProductsFilters } from '../contexts/ProductsFiltersContext';
 import * as CategoriesService from '../services/categories';
 import * as ProductsService from '../services/products';
 import { spacing, textSpacing, typography } from '../styles/theme';
@@ -32,8 +34,8 @@ function buildImageUriFromProduct(p?: Partial<Product>): string | undefined {
     return `data:${mime};base64,${b64}`;
 }
 
-type SortField = 'name' | 'category' | 'price';
-type SortDirection = 'asc' | 'desc';
+type SortField = ProductsSortField;
+type SortDirection = ProductsSortDirection;
 
 // Lista de ícones disponíveis para categorias
 const AVAILABLE_ICONS = [
@@ -551,17 +553,16 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
 }
 
 export default function ProductsScreen() {
+    const theme = useTheme();
     const [products, setProducts] = useState<Product[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [activeCategories, setActiveCategories] = useState<string[]>([]);
     const [formVisible, setFormVisible] = useState(false);
     const [categoryModalVisible, setCategoryModalVisible] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [loading, setLoading] = useState(true);
-    const [sortField, setSortField] = useState<SortField>('name');
-    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const { activeCategories, setActiveCategories, sortField, setSortField, sortDirection, setSortDirection } = useProductsFilters();
     const [reopenAfterCategories, setReopenAfterCategories] = useState(false);
     const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
@@ -784,15 +785,53 @@ export default function ProductsScreen() {
                         {categories.length > 0 && (
                             <View style={styles.categoryChips}>
                                 {categories.map((cat) => (
-                                    <Chip
-                                        key={cat.id}
-                                        selected={activeCategories.includes(cat.name)}
-                                        onPress={() => toggleCategoryFilter(cat.name)}
-                                        icon={cat.icon || 'tag'}
-                                        style={{ borderRadius: 999 }}
-                                    >
-                                        {cat.name}
-                                    </Chip>
+                                    (() => {
+                                        const isActive = activeCategories.includes(cat.name);
+                                        const bgInactive = theme.colors.surface;
+                                        const bgActive =
+                                            (theme.colors as any)?.secondaryContainer ??
+                                            (theme.colors as any)?.primaryContainer ??
+                                            (theme.colors as any)?.surfaceVariant ??
+                                            theme.colors.surface;
+
+                                        const borderInactive =
+                                            (theme.colors as any)?.outlineVariant ??
+                                            theme.colors.outline;
+
+                                        const textInactive =
+                                            (theme.colors as any)?.onSurfaceVariant ??
+                                            theme.colors.onSurface;
+                                        const textActive =
+                                            (theme.colors as any)?.onSecondaryContainer ??
+                                            (theme.colors as any)?.onPrimaryContainer ??
+                                            theme.colors.onSurface;
+
+                                        return (
+                                            <Chip
+                                                key={cat.id}
+                                                selected={isActive}
+                                                showSelectedOverlay={false}
+                                                mode={isActive ? 'flat' : 'outlined'}
+                                                selectedColor={textActive}
+                                                onPress={() => toggleCategoryFilter(cat.name)}
+                                                icon={cat.icon || 'tag'}
+                                                textStyle={{
+                                                    color: isActive ? textActive : textInactive,
+                                                    fontWeight: isActive ? '700' : '600',
+                                                }}
+                                                style={StyleSheet.flatten([
+                                                    styles.categoryChip,
+                                                    {
+                                                        backgroundColor: isActive ? bgActive : bgInactive,
+                                                        borderColor: borderInactive,
+                                                        borderWidth: isActive ? 2 : 1,
+                                                    },
+                                                ])}
+                                            >
+                                                {cat.name}
+                                            </Chip>
+                                        );
+                                    })()
                                 ))}
                             </View>
                         )}
@@ -1031,6 +1070,10 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: spacing.sm,
         marginBottom: spacing.md,
+    },
+    categoryChip: {
+        borderRadius: 999,
+        alignSelf: 'flex-start',
     },
     categoryRow: {
         flexDirection: 'row',

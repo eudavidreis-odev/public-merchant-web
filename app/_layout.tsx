@@ -3,6 +3,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { MD3LightTheme, Provider as PaperProvider } from 'react-native-paper';
 import Sidebar from '../components/Sidebar';
 import { OrdersFiltersProvider } from '../contexts/OrdersFiltersContext';
+import { ProductsFiltersProvider } from '../contexts/ProductsFiltersContext';
 
 const theme = {
   ...MD3LightTheme,
@@ -20,12 +21,14 @@ export default function RootLayout() {
   return (
     <PaperProvider theme={theme}>
       <OrdersFiltersProvider>
-        <View style={styles.container}>
-          {isDesktop && <Sidebar />}
-          <View style={styles.content}>
-            <Slot />
+        <ProductsFiltersProvider>
+          <View style={styles.container}>
+            {isDesktop && <Sidebar />}
+            <View style={styles.content}>
+              <Slot />
+            </View>
           </View>
-        </View>
+        </ProductsFiltersProvider>
       </OrdersFiltersProvider>
     </PaperProvider>
   );
