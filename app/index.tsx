@@ -3,11 +3,16 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { DataTable, Text } from 'react-native-paper';
-import OrderStatusChip, { getOrderStatusStyle } from '../components/OrderStatusChip';
+import OrderStatusChip from '../components/OrderStatusChip';
 import { CARD_PADDING } from '../constants/card';
 import * as OrdersService from '../services/orders';
 import { textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
+import {
+  ACTIVE_ORDER_STATUSES,
+  getOrderStatusStyle,
+  ORDER_STATUSES,
+} from '../types/orderStatus';
 
 function formatBRLFromCentavos(total_centavos: number): string {
   if (typeof total_centavos !== 'number') return 'R$ 0,00';
@@ -36,24 +41,6 @@ function formatDate(ts?: any): string {
     return '-';
   }
 }
-
-const ACTIVE_STATUSES: Order['status'][] = [
-  'Aguardando pagamento',
-  'Pago',
-  'Preparando',
-  'Pronto',
-  'Em entrega',
-];
-
-const ORDER_STATUSES: Order['status'][] = [
-  'Aguardando pagamento',
-  'Pago',
-  'Preparando',
-  'Pronto',
-  'Em entrega',
-  'Entregue',
-  'Cancelado',
-];
 
 const KpiCard = ({ title, value, onPress }: { title: string; value: string; onPress?: () => void }) => (
   <Pressable style={({ pressed }) => [styles.kpiCard, pressed && { opacity: 0.7 }]} onPress={onPress} android_ripple={{ color: '#eee' }}>
@@ -88,15 +75,29 @@ export default function DashboardScreen() {
     return orders.filter((o) => isToday(o.createdAt));
   }, [orders]);
 
+  const last30Orders = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const inLast30Days = (ts?: any) => {
+      if (!ts) return false;
+      const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
+      return d >= start && d <= now;
+    };
+    return orders.filter((o) => inLast30Days(o.createdAt));
+  }, [orders]);
+
   const kpis = useMemo(() => {
     const revenueCents = todaysOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const ticketMedioCents = todaysOrders.length ? Math.round(revenueCents / todaysOrders.length) : 0;
 
+    const revenue30dCents = last30Orders.reduce((sum, o) => sum + (o.total || 0), 0);
+
     return {
       faturamentoDia: formatBRLFromCentavos(revenueCents),
       ticketMedio: formatBRLFromCentavos(ticketMedioCents),
+      faturamento30d: formatBRLFromCentavos(revenue30dCents),
     };
-  }, [todaysOrders]);
+  }, [todaysOrders, last30Orders]);
 
   const ordersByStatus = useMemo(() => {
     const counts = ORDER_STATUSES.reduce((acc, status) => {
@@ -114,7 +115,7 @@ export default function DashboardScreen() {
 
   const recentActive = useMemo(() => {
     return orders
-      .filter((o) => ACTIVE_STATUSES.includes(o.status))
+      .filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status))
       .slice(0, 5);
   }, [orders]);
 
@@ -130,13 +131,30 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Finanças</Text>
         <Text style={styles.sectionDescription}>Resumo financeiro do dia.</Text>
         <View style={styles.kpiRow}>
-          <KpiCard title="Faturamento (Hoje)" value={kpis.faturamentoDia} onPress={() => router.push('/finance')} />
-          <KpiCard title="Ticket Médio" value={kpis.ticketMedio} onPress={() => router.push('/finance')} />
+          <KpiCard
+            title="Faturamento (Hoje)"
+            value={kpis.faturamentoDia}
+            onPress={() => router.push({ pathname: '/finance', params: { period: 'today' } })}
+          />
+          <KpiCard
+            title="Ticket Médio"
+            value={kpis.ticketMedio}
+            onPress={() => router.push({ pathname: '/finance', params: { period: 'today' } })}
+          />
+          <KpiCard
+            title="Faturamento (Últimos 30 dias)"
+            value={kpis.faturamento30d}
+            onPress={() => router.push({ pathname: '/finance', params: { period: '30d' } })}
+          />
         </View>
       </View>
 
       {/* Card de Pedidos por Status */}
-      <View style={styles.card}>
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
+        onPress={() => router.push('/orders')}
+        android_ripple={{ color: '#eee' }}
+      >
         <Text style={styles.sectionTitle}>Pedidos por Status</Text>
         <Text style={styles.sectionDescription}>Contagem de pedidos de hoje por etapa.</Text>
         <View style={styles.statusSummaryRow}>
@@ -159,10 +177,14 @@ export default function DashboardScreen() {
             );
           })}
         </View>
-      </View>
+      </Pressable>
 
       {/* Recent Orders */}
-      <View style={[styles.card, { marginTop: 8 }]}>
+      <Pressable
+        style={({ pressed }) => [styles.card, { marginTop: 8 }, pressed && { opacity: 0.92 }]}
+        onPress={() => router.push('/orders')}
+        android_ripple={{ color: '#eee' }}
+      >
         <Text style={styles.sectionTitle}>Pedidos Recentes</Text>
         <Text style={styles.sectionDescription}>Últimos pedidos em andamento.</Text>
         {recentActive.length === 0 ? (
@@ -194,7 +216,7 @@ export default function DashboardScreen() {
             ))}
           </DataTable>
         )}
-      </View>
+      </Pressable>
     </ScrollView>
   );
 }

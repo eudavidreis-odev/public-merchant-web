@@ -17,25 +17,8 @@ import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
 import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
+import { ACTIVE_ORDER_STATUSES, ORDER_STATUSES } from '../types/orderStatus';
 import './global.css';
-
-const ORDER_STATUSES: Order['status'][] = [
-  'Aguardando pagamento',
-  'Pago',
-  'Preparando',
-  'Pronto',
-  'Em entrega',
-  'Entregue',
-  'Cancelado',
-];
-
-const ACTIVE_STATUSES: Order['status'][] = [
-  'Aguardando pagamento',
-  'Pago',
-  'Preparando',
-  'Pronto',
-  'Em entrega',
-];
 
 function formatBRLFromCentavos(total_centavos: number): string {
   if (typeof total_centavos !== 'number') return 'R$ 0,00';
@@ -106,8 +89,8 @@ export default function OrdersScreen() {
 
   const filteredOrders = useMemo(() => {
     let base = filter === 'active'
-      ? allOrders.filter((order) => ACTIVE_STATUSES.includes(order.status))
-      : allOrders.filter((order) => !ACTIVE_STATUSES.includes(order.status));
+      ? allOrders.filter((order) => ACTIVE_ORDER_STATUSES.includes(order.status))
+      : allOrders.filter((order) => !ACTIVE_ORDER_STATUSES.includes(order.status));
 
     // Filtro por status (chips)
     if (activeStatuses.length > 0) {

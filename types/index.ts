@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import type { OrderStatus } from './orderStatus';
 
 export type Product = {
     id: string;
@@ -22,7 +23,7 @@ export type Category = {
 
 export type Order = {
     id: string;
-    status: 'Aguardando pagamento' | 'Pago' | 'Preparando' | 'Pronto' | 'Em entrega' | 'Entregue' | 'Cancelado';
+    status: OrderStatus;
     total: number; // Alterado de total_centavos
     items: { name: string; quantity: number }[];
     createdAt?: Timestamp;

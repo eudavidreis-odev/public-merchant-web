@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseConfig';
 import type { Order } from '../types';
+import { normalizeOrderStatus } from '../types/orderStatus';
 
 // MerchantId dinâmico via autenticação; opcionalmente pode ser passado pela tela
 
@@ -28,28 +29,6 @@ export type FirestoreOrder = {
     customerName?: string; // Renomeado de userName para customerName
     merchantId?: string;
 };
-
-function normalizeOrderStatus(rawStatus: unknown): Order['status'] {
-    if (typeof rawStatus !== 'string') return 'Aguardando pagamento';
-
-    const status = rawStatus.trim();
-    if (status === 'Criado') return 'Aguardando pagamento';
-    if (status === 'Confirmado') return 'Pago';
-
-    const validStatuses: Order['status'][] = [
-        'Aguardando pagamento',
-        'Pago',
-        'Preparando',
-        'Pronto',
-        'Em entrega',
-        'Entregue',
-        'Cancelado',
-    ];
-
-    return validStatuses.includes(status as Order['status'])
-        ? (status as Order['status'])
-        : 'Aguardando pagamento';
-}
 
 /**
  * Assina pedidos em tempo real para um merchant específico.

@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Menu, Text } from 'react-native-paper';
@@ -19,6 +20,7 @@ import {
 import { palette, spacing, textSpacing, typography } from '../styles/theme';
 
 export default function FinanceScreen() {
+  const params = useLocalSearchParams<{ period?: string }>();
   const [period, setPeriod] = React.useState<FinancePeriod>('month');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [customRange, setCustomRange] = React.useState<CustomRange>({ start: null, end: null });
@@ -46,6 +48,29 @@ export default function FinanceScreen() {
       }
     }
   }, []);
+
+  React.useEffect(() => {
+    const p = params?.period;
+    if (!p) return;
+
+    const normalized = String(p).trim();
+    const mapped: Record<string, FinancePeriod> = {
+      today: 'today',
+      week: 'week',
+      month: 'month',
+      '30d': '30d',
+      last30: '30d',
+      custom: 'custom',
+    };
+
+    const next = mapped[normalized];
+    if (!next) return;
+
+    setPeriod(next);
+    if (next !== 'custom') {
+      setMenuVisible(false);
+    }
+  }, [params?.period]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
