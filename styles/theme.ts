@@ -5,6 +5,7 @@ export const palette = {
     secondary: '#F9A825', // mostarda
     secondaryDark: '#B28704',
     accent: '#FF7043', // molho/laranja
+    selectorText: '#4A4949',
     success: '#2E7D32',
     info: '#0288D1',
     warning: '#F57C00',

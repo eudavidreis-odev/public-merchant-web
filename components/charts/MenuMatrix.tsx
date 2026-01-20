@@ -1,28 +1,39 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Avatar, Card, Chip, List } from 'react-native-paper';
 import { CARD_PADDING } from '../../constants/card';
 import type { MenuItemPoint } from '../../services/finance';
 import { textSpacing, typography } from '../../styles/theme';
 
-const getIconForType = (type: string) => {
-  switch (type) {
-    case 'Campeão':
-      return { icon: 'trophy-award', color: '#FFC107' };
-    case 'Popular':
-      return { icon: 'thumb-up-outline', color: '#4CAF50' };
-    case 'Promissor':
-      return { icon: 'lightbulb-on-outline', color: '#007BFF' };
-    case 'Dorminhoco':
-      return { icon: 'sleep', color: '#9E9E9E' };
-    default:
-      return { icon: 'circle-small', color: '#333' };
-  }
+export type MenuItemType = 'Campeão' | 'Popular' | 'Promissor' | 'Dorminhoco' | 'Normal';
+
+export const MENU_ITEM_TYPE_ORDER: MenuItemType[] = [
+  'Campeão',
+  'Popular',
+  'Promissor',
+  'Dorminhoco',
+  'Normal',
+];
+
+export const MENU_ITEM_TYPE_STYLES: Record<MenuItemType, { icon: string; color: string }> = {
+  'Campeão': { icon: 'trophy-award', color: '#FFC107' },
+  'Popular': { icon: 'thumb-up-outline', color: '#4CAF50' },
+  'Promissor': { icon: 'lightbulb-on-outline', color: '#007BFF' },
+  'Dorminhoco': { icon: 'sleep', color: '#9E9E9E' },
+  'Normal': { icon: 'circle-small', color: '#333' },
 };
 
-type Props = { items: MenuItemPoint[] };
+export function getMenuItemTypeStyle(type: string): { icon: string; color: string } {
+  const key = type as MenuItemType;
+  return MENU_ITEM_TYPE_STYLES[key] ?? MENU_ITEM_TYPE_STYLES.Normal;
+}
 
-export default function MenuMatrix({ items }: Props) {
+type Props = {
+  items: MenuItemPoint[];
+  filters?: React.ReactNode;
+};
+
+export default function MenuMatrix({ items, filters }: Props) {
   return (
     <Card style={styles.container}>
       <Card.Title
@@ -32,9 +43,10 @@ export default function MenuMatrix({ items }: Props) {
         subtitleStyle={{ fontSize: typography.cardDescription, opacity: 0.85, marginBottom: textSpacing.cardDescription }}
       />
       <Card.Content>
+        {!!filters && <View style={styles.filtersContainer}>{filters}</View>}
         <List.Section>
           {items.map((item) => {
-            const { icon, color } = getIconForType(item.type);
+            const { icon, color } = getMenuItemTypeStyle(item.type);
             return (
               <List.Item
                 key={item.id}
@@ -59,6 +71,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 8,
     padding: CARD_PADDING,
+  },
+  filtersContainer: {
+    marginBottom: 8,
   },
   listItem: {
     borderBottomWidth: 1,
