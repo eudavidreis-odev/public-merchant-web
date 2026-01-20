@@ -17,7 +17,7 @@ import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
 import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
-import { ACTIVE_ORDER_STATUSES, ORDER_STATUSES } from '../types/orderStatus';
+import { ORDER_STATUSES } from '../types/orderStatus';
 import './global.css';
 
 function formatBRLFromCentavos(total_centavos: number): string {
@@ -55,17 +55,16 @@ export default function OrdersScreen() {
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
   const [confirmChange, setConfirmChange] = useState<{ order: Order; newStatus: Order['status'] } | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  // Tabs: 'active' | 'history'
-  const [filter, setFilter] = useState<'active' | 'history'>('active');
-  // Toolbar: busca e data
-  const [searchQuery, setSearchQuery] = useState('');
-  const [datePreset, setDatePreset] = useState<'all' | 'today' | 'last7' | 'month'>('all');
+  // Filtros por card
+  const [todayStatuses, setTodayStatuses] = useState<Order['status'][]>([]);
+  const [todaySearchQuery, setTodaySearchQuery] = useState('');
+  const [historyStatuses, setHistoryStatuses] = useState<Order['status'][]>([]);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyDatePreset, setHistoryDatePreset] = useState<'all' | 'last7' | 'month'>('all');
   // Ordenação
   type SortField = 'id' | 'customerName' | 'createdAt' | 'total' | 'status';
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  // Filtro de status
-  const [activeStatuses, setActiveStatuses] = useState<Order['status'][]>([]);
   const router = useRouter();
   const theme = useTheme();
 
@@ -87,51 +86,20 @@ export default function OrdersScreen() {
     return () => unsubscribe();
   }, []);
 
-  const filteredOrders = useMemo(() => {
-    let base = filter === 'active'
-      ? allOrders.filter((order) => ACTIVE_ORDER_STATUSES.includes(order.status))
-      : allOrders.filter((order) => !ACTIVE_ORDER_STATUSES.includes(order.status));
+  const getOrderCreatedAtDate = (o: Order) => {
+    const val: any = o.createdAt;
+    if (!val) return null;
+    if (typeof val.toDate === 'function') return val.toDate() as Date;
+    if (val instanceof Date) return val;
+    if (typeof val === 'string' || typeof val === 'number') return new Date(val);
+    return null;
+  };
 
-    // Filtro por status (chips)
-    if (activeStatuses.length > 0) {
-      base = base.filter((o) => activeStatuses.includes(o.status));
-    }
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-    // Busca por ID ou nome do cliente (case-insensitive)
-    if (searchQuery.trim().length > 0) {
-      const q = searchQuery.trim().toLowerCase();
-      base = base.filter((o) => {
-        const name = (o.customerName || '').toLowerCase();
-        return name.includes(q) || o.id.toLowerCase().includes(q);
-      });
-    }
-
-    // Filtro de data por presets
-    const now = new Date();
-    if (datePreset !== 'all') {
-      base = base.filter((o) => {
-        if (!o.createdAt) return false;
-        const d = typeof (o.createdAt as any).toDate === 'function'
-          ? (o.createdAt as any).toDate()
-          : new Date(o.createdAt as any);
-
-        if (datePreset === 'today') {
-          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-        }
-        if (datePreset === 'last7') {
-          const diffMs = now.getTime() - d.getTime();
-          const diffDays = diffMs / (1000 * 60 * 60 * 24);
-          return diffDays <= 7;
-        }
-        if (datePreset === 'month') {
-          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-        }
-        return true;
-      });
-    }
-
-    // Ordenação
-    const sorted = [...base].sort((a, b) => {
+  const sortOrders = (base: Order[]) => {
+    return [...base].sort((a, b) => {
       let aValue: any;
       let bValue: any;
       switch (sortField) {
@@ -172,8 +140,82 @@ export default function OrdersScreen() {
       return 0;
     });
 
-    return sorted;
-  }, [allOrders, filter, searchQuery, datePreset, sortField, sortDirection, activeStatuses]);
+  };
+
+  const todaysOrders = useMemo(() => {
+    const now = new Date();
+    return allOrders.filter((o) => {
+      const d = getOrderCreatedAtDate(o);
+      if (!d) return false;
+      return isSameDay(d, now);
+    });
+  }, [allOrders]);
+
+  const historyBaseOrders = useMemo(() => {
+    const now = new Date();
+    return allOrders.filter((o) => {
+      const d = getOrderCreatedAtDate(o);
+      if (!d) return false;
+      return !isSameDay(d, now);
+    });
+  }, [allOrders]);
+
+  const todaysFilteredOrders = useMemo(() => {
+    let base = todaysOrders;
+    if (todayStatuses.length > 0) {
+      base = base.filter((o) => todayStatuses.includes(o.status));
+    }
+
+    // Busca por ID ou nome do cliente (case-insensitive)
+    if (todaySearchQuery.trim().length > 0) {
+      const q = todaySearchQuery.trim().toLowerCase();
+      base = base.filter((o) => {
+        const name = (o.customerName || '').toLowerCase();
+        return name.includes(q) || o.id.toLowerCase().includes(q);
+      });
+    }
+
+    return sortOrders(base);
+  }, [todaysOrders, todayStatuses, todaySearchQuery, sortField, sortDirection]);
+
+  const historyFilteredOrders = useMemo(() => {
+    let base = historyBaseOrders;
+
+    // Filtro por status (chips)
+    if (historyStatuses.length > 0) {
+      base = base.filter((o) => historyStatuses.includes(o.status));
+    }
+
+    // Busca por ID ou nome do cliente (case-insensitive)
+    if (historySearchQuery.trim().length > 0) {
+      const q = historySearchQuery.trim().toLowerCase();
+      base = base.filter((o) => {
+        const name = (o.customerName || '').toLowerCase();
+        return name.includes(q) || o.id.toLowerCase().includes(q);
+      });
+    }
+
+    // Filtro de data por presets (sem "Hoje" aqui, pois há um card dedicado)
+    const now = new Date();
+    if (historyDatePreset !== 'all') {
+      base = base.filter((o) => {
+        const d = getOrderCreatedAtDate(o);
+        if (!d) return false;
+
+        if (historyDatePreset === 'last7') {
+          const diffMs = now.getTime() - d.getTime();
+          const diffDays = diffMs / (1000 * 60 * 60 * 24);
+          return diffDays <= 7;
+        }
+        if (historyDatePreset === 'month') {
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }
+        return true;
+      });
+    }
+
+    return sortOrders(base);
+  }, [historyBaseOrders, historyStatuses, historySearchQuery, historyDatePreset, sortField, sortDirection]);
 
   const openMenu = (orderId: string) =>
     setMenuVisible((prev) => ({ ...prev, [orderId]: true }));
@@ -229,220 +271,378 @@ export default function OrdersScreen() {
           Acompanhe e gerencie os pedidos recebidos em tempo real.
         </Text>
 
-        {/* Tabs customizadas */}
-        <View style={styles.tabsContainer}>
-          {[
-            { key: 'active', label: 'Em Andamento' },
-            { key: 'history', label: 'Histórico' },
-          ].map((t) => (
-            <Pressable
-              key={t.key}
-              onPress={() => setFilter(t.key as 'active' | 'history')}
-              style={StyleSheet.flatten([
-                styles.tab,
-                filter === t.key && styles.tabActive,
-              ])}
-            >
-              <Text style={StyleSheet.flatten([
-                styles.tabLabel,
-                filter === t.key && styles.tabLabelActive,
-              ])}>{t.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* Card: Hoje */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Hoje</Text>
+          <Text style={styles.cardDescription}>Pedidos recebidos hoje (apenas filtro por status).</Text>
 
-        {/* Chips de filtro de status */}
-        <View style={styles.chipsContainer}>
-          {ORDER_STATUSES.map((status) => (
-            <OrderStatusChip
-              key={status}
-              status={status}
-              selected={activeStatuses.includes(status)}
-              onPress={() => {
-                setActiveStatuses((prev) =>
-                  prev.includes(status)
-                    ? prev.filter((s) => s !== status)
-                    : [...prev, status]
-                );
-              }}
-              style={{ marginRight: spacing.xs, marginBottom: spacing.xs }}
-            />
-          ))}
-          {activeStatuses.length > 0 && (
-            <Button mode="text" onPress={() => setActiveStatuses([])} style={{ marginLeft: 8 }} compact>
-              Limpar filtros
-            </Button>
-          )}
-        </View>
-
-        {/* Toolbar com busca e filtro de data */}
-        <View style={styles.toolbar}>
-          <View style={{ flex: 1 }}>
-            <TextInput
-              mode="outlined"
-              placeholder="Buscar por ID ou Cliente"
-              value={searchQuery}
-              onChangeText={(txt) => setSearchQuery(txt)}
-            />
+          <View style={styles.chipsContainer}>
+            {ORDER_STATUSES.map((status) => (
+              <OrderStatusChip
+                key={`today-${status}`}
+                status={status}
+                selected={todayStatuses.includes(status)}
+                onPress={() => {
+                  setTodayStatuses((prev) =>
+                    prev.includes(status)
+                      ? prev.filter((s) => s !== status)
+                      : [...prev, status]
+                  );
+                }}
+                style={{ marginRight: spacing.xs, marginBottom: spacing.xs }}
+              />
+            ))}
+            {todayStatuses.length > 0 && (
+              <Button mode="text" onPress={() => setTodayStatuses([])} style={{ marginLeft: 8 }} compact>
+                Limpar filtros
+              </Button>
+            )}
           </View>
 
-          <View style={styles.datePresetContainer}>
-            {[
-              { key: 'all', label: 'Todos' },
-              { key: 'today', label: 'Hoje' },
-              { key: 'last7', label: 'Últimos 7 dias' },
-              { key: 'month', label: 'Este mês' },
-            ].map((p) => (
-              <Pressable
-                key={p.key}
-                onPress={() => setDatePreset(p.key as 'all' | 'today' | 'last7' | 'month')}
-                style={StyleSheet.flatten([
-                  styles.presetChip,
-                  datePreset === p.key && styles.presetChipActive,
-                ])}
-              >
-                <Text style={StyleSheet.flatten([
-                  styles.presetLabel,
-                  datePreset === p.key && styles.presetLabelActive,
-                ])}>{p.label}</Text>
+          <View style={styles.toolbar}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                mode="outlined"
+                placeholder="Buscar por ID ou Cliente"
+                value={todaySearchQuery}
+                onChangeText={(txt) => setTodaySearchQuery(txt)}
+              />
+            </View>
+          </View>
+
+          <DataTable>
+            <DataTable.Header style={styles.header}>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])} onPress={() => {
+                if (sortField === 'id') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('id');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Pedido / Cliente</Text>
+                  {sortField === 'id' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])} onPress={() => {
+                if (sortField === 'createdAt') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('createdAt');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Data</Text>
+                  {sortField === 'createdAt' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={styles.headerCell} numeric onPress={() => {
+                if (sortField === 'total') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('total');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Total</Text>
+                  {sortField === 'total' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])} onPress={() => {
+                if (sortField === 'status') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('status');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Status</Text>
+                  {sortField === 'status' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={styles.headerCell} numeric>
+                <Text>Ações</Text>
+              </DataTable.Title>
+            </DataTable.Header>
+
+            {todaysFilteredOrders.map((order) => (
+              <Pressable key={order.id} onPress={() => handleRowPress(order)}>
+                {({ hovered }) => (
+                  <DataTable.Row
+                    style={StyleSheet.flatten([
+                      styles.row,
+                      hovered && { backgroundColor: theme.colors.surfaceVariant },
+                    ])}>
+                    <DataTable.Cell style={{ flex: 2 }}>
+                      <View>
+                        <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{
+                            color: theme.colors.onSurfaceVariant,
+                            fontStyle:
+                              order.customerName === 'Cliente não identificado'
+                                ? 'italic'
+                                : 'normal',
+                          }}>
+                          {order.customerName === 'Cliente não identificado'
+                            ? 'Cliente Visitante'
+                            : order.customerName}
+                        </Text>
+                      </View>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={{ flex: 1.2 }}>
+                      {formatDate(order.createdAt)}
+                    </DataTable.Cell>
+                    <DataTable.Cell numeric>
+                      {formatBRLFromCentavos(order.total)}
+                    </DataTable.Cell>
+                    <DataTable.Cell style={{ flex: 1.5 }}>
+                      <OrderStatusChip
+                        status={order.status}
+                        onPress={() => openMenu(order.id)}
+                      />
+                      {menuVisible[order.id] && (
+                        <Portal>
+                          <View style={styles.statusMenuOverlay}>
+                            <View style={styles.statusMenuCard}>
+                              {ORDER_STATUSES.map((status) => (
+                                <Pressable
+                                  key={status}
+                                  onPress={() => requestStatusChange(order, status)}
+                                  style={styles.statusMenuItem}
+                                >
+                                  <OrderStatusChip status={status} />
+                                </Pressable>
+                              ))}
+                              <Pressable onPress={() => closeMenu(order.id)} style={styles.statusMenuClose}>
+                                <Text style={{ color: '#6b7280' }}>Fechar</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        </Portal>
+                      )}
+                    </DataTable.Cell>
+                    <DataTable.Cell numeric>
+                      <Link
+                        href={{
+                          pathname: '/chat/[orderId]',
+                          params: { orderId: order.id, merchantId: order.merchantId },
+                        }}
+                        asChild>
+                        <IconButton icon="chat-outline" size={20} />
+                      </Link>
+                      <IconButton icon="chevron-right" size={20} />
+                    </DataTable.Cell>
+                  </DataTable.Row>
+                )}
               </Pressable>
             ))}
-          </View>
+
+            {todaysFilteredOrders.length === 0 && !loading && (
+              <View style={styles.noOrdersContainer}>
+                <Text style={styles.noOrdersText}>
+                  Nenhum pedido de hoje encontrado para este filtro.
+                </Text>
+              </View>
+            )}
+          </DataTable>
         </View>
 
-        <DataTable>
-          <DataTable.Header style={styles.header}>
-            <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])} onPress={() => {
-              if (sortField === 'id') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-              setSortField('id');
-            }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text>Pedido / Cliente</Text>
-                {sortField === 'id' && (
-                  <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
-                )}
-              </View>
-            </DataTable.Title>
-            <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])} onPress={() => {
-              if (sortField === 'createdAt') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-              setSortField('createdAt');
-            }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text>Data</Text>
-                {sortField === 'createdAt' && (
-                  <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
-                )}
-              </View>
-            </DataTable.Title>
-            <DataTable.Title style={styles.headerCell} numeric onPress={() => {
-              if (sortField === 'total') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-              setSortField('total');
-            }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text>Total</Text>
-                {sortField === 'total' && (
-                  <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
-                )}
-              </View>
-            </DataTable.Title>
-            <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])} onPress={() => {
-              if (sortField === 'status') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-              setSortField('status');
-            }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text>Status</Text>
-                {sortField === 'status' && (
-                  <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
-                )}
-              </View>
-            </DataTable.Title>
-            <DataTable.Title style={styles.headerCell} numeric>
-              <Text>Ações</Text>
-            </DataTable.Title>
-          </DataTable.Header>
+        {/* Card: Histórico */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Histórico</Text>
+          <Text style={styles.cardDescription}>Pedidos anteriores (filtros por status e data).</Text>
 
-          {filteredOrders.map((order) => (
-            <Pressable key={order.id} onPress={() => handleRowPress(order)}>
-              {({ hovered }) => (
-                <DataTable.Row
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    hovered && { backgroundColor: theme.colors.surfaceVariant },
-                  ])}>
-                  <DataTable.Cell style={{ flex: 2 }}>
-                    <View>
-                      <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
-                      <Text
-                        variant="bodySmall"
-                        style={{
-                          color: theme.colors.onSurfaceVariant,
-                          fontStyle:
-                            order.customerName === 'Cliente não identificado'
-                              ? 'italic'
-                              : 'normal',
-                        }}>
-                        {order.customerName === 'Cliente não identificado'
-                          ? 'Cliente Visitante'
-                          : order.customerName}
-                      </Text>
-                    </View>
-                  </DataTable.Cell>
-                  <DataTable.Cell style={{ flex: 1.2 }}>
-                    {formatDate(order.createdAt)}
-                  </DataTable.Cell>
-                  <DataTable.Cell numeric>
-                    {formatBRLFromCentavos(order.total)}
-                  </DataTable.Cell>
-                  <DataTable.Cell style={{ flex: 1.5 }}>
-                    <OrderStatusChip
-                      status={order.status}
-                      onPress={() => openMenu(order.id)}
-                    />
-                    {menuVisible[order.id] && (
-                      <Portal>
-                        <View style={styles.statusMenuOverlay}>
-                          <View style={styles.statusMenuCard}>
-                            {ORDER_STATUSES.map((status) => (
-                              <Pressable
-                                key={status}
-                                onPress={() => requestStatusChange(order, status)}
-                                style={styles.statusMenuItem}
-                              >
-                                <OrderStatusChip status={status} />
-                              </Pressable>
-                            ))}
-                            <Pressable onPress={() => closeMenu(order.id)} style={styles.statusMenuClose}>
-                              <Text style={{ color: '#6b7280' }}>Fechar</Text>
-                            </Pressable>
-                          </View>
-                        </View>
-                      </Portal>
-                    )}
-                  </DataTable.Cell>
-                  <DataTable.Cell numeric>
-                    <Link
-                      href={{
-                        pathname: '/chat/[orderId]',
-                        params: { orderId: order.id, merchantId: order.merchantId },
-                      }}
-                      asChild>
-                      <IconButton icon="chat-outline" size={20} />
-                    </Link>
-                    <IconButton icon="chevron-right" size={20} />
-                  </DataTable.Cell>
-                </DataTable.Row>
-              )}
-            </Pressable>
-          ))}
+          {/* Chips de filtro de status */}
+          <View style={styles.chipsContainer}>
+            {ORDER_STATUSES.map((status) => (
+              <OrderStatusChip
+                key={`history-${status}`}
+                status={status}
+                selected={historyStatuses.includes(status)}
+                onPress={() => {
+                  setHistoryStatuses((prev) =>
+                    prev.includes(status)
+                      ? prev.filter((s) => s !== status)
+                      : [...prev, status]
+                  );
+                }}
+                style={{ marginRight: spacing.xs, marginBottom: spacing.xs }}
+              />
+            ))}
+            {historyStatuses.length > 0 && (
+              <Button mode="text" onPress={() => setHistoryStatuses([])} style={{ marginLeft: 8 }} compact>
+                Limpar filtros
+              </Button>
+            )}
+          </View>
 
-          {filteredOrders.length === 0 && !loading && (
-            <View style={styles.noOrdersContainer}>
-              <Text style={styles.noOrdersText}>
-                Nenhum pedido encontrado para este filtro.
-              </Text>
+          {/* Toolbar com busca e filtro de data */}
+          <View style={styles.toolbar}>
+            <View style={{ flex: 1 }}>
+              <TextInput
+                mode="outlined"
+                placeholder="Buscar por ID ou Cliente"
+                value={historySearchQuery}
+                onChangeText={(txt) => setHistorySearchQuery(txt)}
+              />
             </View>
-          )}
-        </DataTable>
+
+            <View style={styles.datePresetContainer}>
+              {[
+                { key: 'all', label: 'Todos' },
+                { key: 'last7', label: 'Últimos 7 dias' },
+                { key: 'month', label: 'Este mês' },
+              ].map((p) => (
+                <Pressable
+                  key={p.key}
+                  onPress={() => setHistoryDatePreset(p.key as 'all' | 'last7' | 'month')}
+                  style={StyleSheet.flatten([
+                    styles.presetChip,
+                    historyDatePreset === p.key && styles.presetChipActive,
+                  ])}
+                >
+                  <Text style={StyleSheet.flatten([
+                    styles.presetLabel,
+                    historyDatePreset === p.key && styles.presetLabelActive,
+                  ])}>{p.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <DataTable>
+            <DataTable.Header style={styles.header}>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])} onPress={() => {
+                if (sortField === 'id') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('id');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Pedido / Cliente</Text>
+                  {sortField === 'id' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])} onPress={() => {
+                if (sortField === 'createdAt') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('createdAt');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Data</Text>
+                  {sortField === 'createdAt' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={styles.headerCell} numeric onPress={() => {
+                if (sortField === 'total') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('total');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Total</Text>
+                  {sortField === 'total' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])} onPress={() => {
+                if (sortField === 'status') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                setSortField('status');
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text>Status</Text>
+                  {sortField === 'status' && (
+                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                  )}
+                </View>
+              </DataTable.Title>
+              <DataTable.Title style={styles.headerCell} numeric>
+                <Text>Ações</Text>
+              </DataTable.Title>
+            </DataTable.Header>
+
+            {historyFilteredOrders.map((order) => (
+              <Pressable key={order.id} onPress={() => handleRowPress(order)}>
+                {({ hovered }) => (
+                  <DataTable.Row
+                    style={StyleSheet.flatten([
+                      styles.row,
+                      hovered && { backgroundColor: theme.colors.surfaceVariant },
+                    ])}>
+                    <DataTable.Cell style={{ flex: 2 }}>
+                      <View>
+                        <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{
+                            color: theme.colors.onSurfaceVariant,
+                            fontStyle:
+                              order.customerName === 'Cliente não identificado'
+                                ? 'italic'
+                                : 'normal',
+                          }}>
+                          {order.customerName === 'Cliente não identificado'
+                            ? 'Cliente Visitante'
+                            : order.customerName}
+                        </Text>
+                      </View>
+                    </DataTable.Cell>
+                    <DataTable.Cell style={{ flex: 1.2 }}>
+                      {formatDate(order.createdAt)}
+                    </DataTable.Cell>
+                    <DataTable.Cell numeric>
+                      {formatBRLFromCentavos(order.total)}
+                    </DataTable.Cell>
+                    <DataTable.Cell style={{ flex: 1.5 }}>
+                      <OrderStatusChip
+                        status={order.status}
+                        onPress={() => openMenu(order.id)}
+                      />
+                      {menuVisible[order.id] && (
+                        <Portal>
+                          <View style={styles.statusMenuOverlay}>
+                            <View style={styles.statusMenuCard}>
+                              {ORDER_STATUSES.map((status) => (
+                                <Pressable
+                                  key={status}
+                                  onPress={() => requestStatusChange(order, status)}
+                                  style={styles.statusMenuItem}
+                                >
+                                  <OrderStatusChip status={status} />
+                                </Pressable>
+                              ))}
+                              <Pressable onPress={() => closeMenu(order.id)} style={styles.statusMenuClose}>
+                                <Text style={{ color: '#6b7280' }}>Fechar</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        </Portal>
+                      )}
+                    </DataTable.Cell>
+                    <DataTable.Cell numeric>
+                      <Link
+                        href={{
+                          pathname: '/chat/[orderId]',
+                          params: { orderId: order.id, merchantId: order.merchantId },
+                        }}
+                        asChild>
+                        <IconButton icon="chat-outline" size={20} />
+                      </Link>
+                      <IconButton icon="chevron-right" size={20} />
+                    </DataTable.Cell>
+                  </DataTable.Row>
+                )}
+              </Pressable>
+            ))}
+
+            {historyFilteredOrders.length === 0 && !loading && (
+              <View style={styles.noOrdersContainer}>
+                <Text style={styles.noOrdersText}>
+                  Nenhum pedido encontrado para este filtro.
+                </Text>
+              </View>
+            )}
+          </DataTable>
+
+        </View>
       </ScrollView>
       {/* Dialog de confirmação de alteração de status */}
       <ConfirmStatusDialog
@@ -498,6 +698,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  cardTitle: {
+    fontSize: typography.cardTitle,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  cardDescription: {
+    opacity: 0.7,
+    marginBottom: textSpacing.cardDescription,
+    fontSize: typography.subtitle,
   },
   dialogOverlay: {
     position: 'absolute',

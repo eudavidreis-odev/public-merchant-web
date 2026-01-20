@@ -8,11 +8,7 @@ import { CARD_PADDING } from '../constants/card';
 import * as OrdersService from '../services/orders';
 import { textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
-import {
-  ACTIVE_ORDER_STATUSES,
-  getOrderStatusStyle,
-  ORDER_STATUSES,
-} from '../types/orderStatus';
+import { getOrderStatusStyle, ORDER_STATUSES } from '../types/orderStatus';
 
 function formatBRLFromCentavos(total_centavos: number): string {
   if (typeof total_centavos !== 'number') return 'R$ 0,00';
@@ -113,10 +109,8 @@ export default function DashboardScreen() {
     return counts;
   }, [todaysOrders]);
 
-  const recentActive = useMemo(() => {
-    return orders
-      .filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status))
-      .slice(0, 5);
+  const recentOrders = useMemo(() => {
+    return orders.slice(0, 10);
   }, [orders]);
 
   return (
@@ -186,9 +180,9 @@ export default function DashboardScreen() {
         android_ripple={{ color: '#eee' }}
       >
         <Text style={styles.sectionTitle}>Pedidos Recentes</Text>
-        <Text style={styles.sectionDescription}>Últimos pedidos em andamento.</Text>
-        {recentActive.length === 0 ? (
-          <Text style={styles.emptyText}>Não há pedidos ativos no momento.</Text>
+        <Text style={styles.sectionDescription}>Últimos 10 pedidos (inclui qualquer status).</Text>
+        {recentOrders.length === 0 ? (
+          <Text style={styles.emptyText}>Nenhum pedido encontrado.</Text>
         ) : (
           <DataTable>
             <DataTable.Header>
@@ -197,7 +191,7 @@ export default function DashboardScreen() {
               <DataTable.Title style={{ flex: 1.2 }}>Status</DataTable.Title>
               <DataTable.Title style={{ flex: 1.2 }}>Tempo</DataTable.Title>
             </DataTable.Header>
-            {recentActive.map((o) => (
+            {recentOrders.map((o) => (
               <DataTable.Row key={o.id}>
                 <DataTable.Cell style={{ flex: 2 }}>
                   <Text style={{ fontWeight: '600' }}>{o.customerName || 'Cliente'}</Text>
