@@ -1,16 +1,27 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Appbar, Text } from 'react-native-paper';
 import Chat from '../../components/chat/Chat';
 import { auth } from '../../config/firebaseConfig';
+import * as OrdersService from '../../services/orders';
 
 // merchantId dinâmico via autenticação; sem fallback hardcoded
 
 export default function ChatScreen() {
-    const { orderId, merchantId: queryMerchantId } = useLocalSearchParams<{ orderId: string, merchantId?: string }>();
+    const { orderId, merchantId: queryMerchantId, returnTo, customerName: customerNameParam } = useLocalSearchParams<{
+        orderId: string;
+        merchantId?: string;
+        returnTo?: string;
+        customerName?: string;
+    }>();
+    const router = useRouter();
+    const navigation = useNavigation();
     const envMerchant = process.env.EXPO_PUBLIC_MERCHANT_ID as string | undefined;
     const merchantId = queryMerchantId || auth.currentUser?.uid || envMerchant || null;
+
+    const [customerName, setCustomerName] = useState<string | null>(customerNameParam ?? null);
 
     if (!orderId) {
         return (
@@ -28,18 +39,78 @@ export default function ChatScreen() {
         );
     }
 
+    useEffect(() => {
+        if (!orderId || !merchantId) return;
+
+        if (customerNameParam) {
+            setCustomerName(customerNameParam);
+        }
+
+        const unsub = OrdersService.subscribeOrderById(
+            orderId,
+            (o) => {
+                if (o?.customerName) setCustomerName(o.customerName);
+            },
+            () => {
+                // não bloqueia o chat se falhar
+            },
+            merchantId
+        );
+
+        return () => unsub?.();
+    }, [orderId, merchantId, customerNameParam]);
+
     const orderPath = `merchants/${merchantId}/pedidos/${orderId}`;
+
+    const headerTitle = useMemo(() => {
+        if (customerName && String(customerName).trim().length > 0) return `Chat com ${customerName}`;
+        return 'Chat';
+    }, [customerName]);
+
+    const handleBack = () => {
+        // Prioriza o destino explícito para manter o retorno consistente
+        if (returnTo === 'orderDetail') {
+            router.replace({
+                pathname: '/orders/[orderId]',
+                params: { orderId, merchantId },
+            });
+            return;
+        }
+        if (returnTo === 'orders') {
+            router.replace('/orders');
+            return;
+        }
+
+        // Fallback: se houver histórico de navegação, volta; senão, vai para /orders
+        try {
+            if (navigation.canGoBack()) {
+                navigation.goBack();
+                return;
+            }
+        } catch {
+            // ignore
+        }
+        router.replace('/orders');
+    };
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: `Chat - Pedido ${orderId.substring(0, 6)}...` }} />
-            <Chat orderPath={orderPath} merchantId={merchantId} />
+            <Appbar.Header>
+                <Appbar.BackAction onPress={handleBack} accessibilityLabel="Voltar" />
+                <Appbar.Content title={headerTitle} />
+            </Appbar.Header>
+            <View style={styles.body}>
+                <Chat orderPath={orderPath} merchantId={merchantId} />
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    body: {
         flex: 1,
     },
     centered: {

@@ -25,8 +25,27 @@ export type Order = {
     id: string;
     status: OrderStatus;
     total: number; // Alterado de total_centavos
-    items: { name: string; quantity: number }[];
+    messages?: unknown;
+    items: {
+        name: string;
+        quantity: number;
+        category?: string;
+        price?: number;
+        productId?: string;
+    }[];
     createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+    paidAt?: Timestamp;
+    cancelledAt?: Timestamp;
+    viewedAt?: Timestamp;
+    cancelledBy?: string;
+    userId?: string;
+    currency?: string;
+    delivery_fee_centavos?: number;
+    payment_method?: string;
+    payment_intent_id?: string;
+    stripe_account_id?: string | null;
+    addressId?: string;
     customerName?: string; // Adicionado para exibição
     merchantId?: string; // Necessário para a função de update
 };

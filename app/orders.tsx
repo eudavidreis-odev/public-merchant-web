@@ -248,9 +248,10 @@ export default function OrdersScreen() {
   };
 
   const handleRowPress = (order: Order) => {
-    // Futuramente, navegar para uma tela de detalhes do pedido
-    console.log('Navegar para detalhes do pedido:', order.id);
-    // router.push(`/order/${order.id}`);
+    router.push({
+      pathname: '/orders/[orderId]',
+      params: { orderId: order.id, merchantId: order.merchantId },
+    });
   };
 
   if (loading) {
@@ -423,7 +424,12 @@ export default function OrdersScreen() {
                       <Link
                         href={{
                           pathname: '/chat/[orderId]',
-                          params: { orderId: order.id, merchantId: order.merchantId },
+                          params: {
+                            orderId: order.id,
+                            merchantId: order.merchantId,
+                            returnTo: 'orders',
+                            customerName: order.customerName,
+                          },
                         }}
                         asChild>
                         <IconButton icon="chat-outline" size={20} />
@@ -621,7 +627,12 @@ export default function OrdersScreen() {
                       <Link
                         href={{
                           pathname: '/chat/[orderId]',
-                          params: { orderId: order.id, merchantId: order.merchantId },
+                          params: {
+                            orderId: order.id,
+                            merchantId: order.merchantId,
+                            returnTo: 'orders',
+                            customerName: order.customerName,
+                          },
                         }}
                         asChild>
                         <IconButton icon="chat-outline" size={20} />

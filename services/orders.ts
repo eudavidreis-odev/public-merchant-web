@@ -30,6 +30,34 @@ export type FirestoreOrder = {
     merchantId?: string;
 };
 
+export type FirestoreOrderDetail = {
+    messages?: unknown;
+    status?: Order['status'] | string;
+    total_centavos?: number;
+    items?: Array<{
+        name: string;
+        quantity: number;
+        category?: string;
+        price?: number;
+        productId?: string;
+    }>;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+    paidAt?: Timestamp;
+    cancelledAt?: Timestamp;
+    viewedAt?: Timestamp;
+    cancelledBy?: string;
+    userId?: string;
+    currency?: string;
+    delivery_fee_centavos?: number;
+    payment_method?: string;
+    payment_intent_id?: string;
+    stripe_account_id?: string | null;
+    addressId?: string;
+    customerName?: string;
+    merchantId?: string;
+};
+
 /**
  * Assina pedidos em tempo real para um merchant específico.
  */
@@ -115,4 +143,79 @@ export async function updateOrderStatus(
         console.error(`[OrdersService] Erro ao atualizar o status do pedido "${orderId}":`, error);
         throw error; // Re-lança o erro para o chamador lidar com a UI
     }
+}
+
+/**
+ * Assina um único pedido (detalhe) em tempo real.
+ */
+export function subscribeOrderById(
+    orderId: string,
+    onUpdate: (order: Order | null) => void,
+    onError: (error: Error) => void,
+    merchantIdOverride?: string,
+): () => void {
+    const envMerchant = process.env.EXPO_PUBLIC_MERCHANT_ID as string | undefined;
+    const activeMerchantId = merchantIdOverride || auth.currentUser?.uid || envMerchant || null;
+    if (!activeMerchantId) {
+        console.warn('[OrdersService] merchantId não disponível (usuário não autenticado).');
+        onError(new Error('Lojista não autenticado. Faça login para ver pedidos.'));
+        return () => { };
+    }
+    if (!orderId) {
+        onError(new Error('ID do pedido não fornecido.'));
+        return () => { };
+    }
+
+    const ref = doc(db, 'merchants', activeMerchantId, 'pedidos', orderId);
+
+    const unsubscribe = onSnapshot(
+        ref,
+        (snap) => {
+            if (!snap.exists()) {
+                onUpdate(null);
+                return;
+            }
+            const data = snap.data() as FirestoreOrderDetail;
+
+            // Extrai o merchantId do path para garantir consistência
+            let merchantId = data.merchantId;
+            if (!merchantId && snap.ref?.path) {
+                const parts = snap.ref.path.split('/');
+                if (parts.length >= 3 && parts[0] === 'merchants') {
+                    merchantId = parts[1];
+                }
+            }
+
+            const totalCentavos = Number(data.total_centavos ?? 0);
+            const order: Order = {
+                id: snap.id,
+                status: normalizeOrderStatus(data.status ?? ''),
+                total: totalCentavos,
+                messages: data.messages,
+                items: Array.isArray(data.items) ? (data.items as any) : [],
+                createdAt: data.createdAt,
+                updatedAt: data.updatedAt,
+                paidAt: data.paidAt,
+                cancelledAt: data.cancelledAt,
+                viewedAt: data.viewedAt,
+                cancelledBy: data.cancelledBy,
+                userId: data.userId,
+                currency: data.currency,
+                delivery_fee_centavos: data.delivery_fee_centavos,
+                payment_method: data.payment_method,
+                payment_intent_id: data.payment_intent_id,
+                stripe_account_id: data.stripe_account_id ?? null,
+                addressId: data.addressId,
+                customerName: data.customerName || 'Cliente não identificado',
+                merchantId,
+            };
+            onUpdate(order);
+        },
+        (error) => {
+            console.error('[OrdersService] Erro no snapshot do pedido: ', error);
+            onError(new Error('Falha ao carregar detalhes do pedido.'));
+        }
+    );
+
+    return unsubscribe;
 }
