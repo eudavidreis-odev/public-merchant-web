@@ -250,7 +250,7 @@ export default function OrdersScreen() {
   const handleRowPress = (order: Order) => {
     router.push({
       pathname: '/orders/[orderId]',
-      params: { orderId: order.id, merchantId: order.merchantId },
+      params: { orderId: order.id, merchantId: order.merchantId, returnTo: 'orders' },
     });
   };
 

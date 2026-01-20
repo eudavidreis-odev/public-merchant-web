@@ -192,7 +192,15 @@ export default function DashboardScreen() {
               <DataTable.Title style={{ flex: 1.2 }}>Tempo</DataTable.Title>
             </DataTable.Header>
             {recentOrders.map((o) => (
-              <DataTable.Row key={o.id}>
+              <DataTable.Row
+                key={o.id}
+                onPress={() =>
+                  router.push({
+                    pathname: '/orders/[orderId]',
+                    params: { orderId: o.id, merchantId: o.merchantId, returnTo: 'dashboard' },
+                  })
+                }
+              >
                 <DataTable.Cell style={{ flex: 2 }}>
                   <Text style={{ fontWeight: '600' }}>{o.customerName || 'Cliente'}</Text>
                   <Text style={{ color: '#6b7280' }}>#{o.id.substring(0, 6)}</Text>
