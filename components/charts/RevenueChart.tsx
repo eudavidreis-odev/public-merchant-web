@@ -79,13 +79,14 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
     const baseInitialSpacing = INITIAL_SPACING;
     const baseEndSpacing = SPACING;
 
-    // No modo "Hoje", os labels são curtos (ex: "18h"), mas precisam de folga
-    // no começo/fim para não serem cortados pelo overflow do card.
+    // Labels do eixo X precisam de folga no começo/fim para não serem cortados
+    // pelo `overflow: 'hidden'` do card.
     const xLabelWidth = isToday ? 48 : 80;
-    const edgePadding = isToday ? Math.ceil(xLabelWidth / 2) + 6 : 0;
+    const edgePaddingToday = Math.ceil(xLabelWidth / 2) + 6;
+    const edgePaddingNonTodayStart = Math.ceil(80 / 2) + 6; // suficiente p/ exibir datas (DD/MM/AA)
 
-    const initialSpacing = isToday ? edgePadding : baseInitialSpacing;
-    const endSpacing = isToday ? edgePadding : baseEndSpacing;
+    const initialSpacing = isToday ? edgePaddingToday : Math.max(baseInitialSpacing, edgePaddingNonTodayStart);
+    const endSpacing = isToday ? edgePaddingToday : baseEndSpacing;
 
     const fixedSpacing = useMemo(() => {
         if (!isToday) return baseSpacing;
@@ -104,16 +105,59 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
     const isWeb = Platform.OS === 'web';
     const disableScroll = isToday;
 
+    const getChartScrollNode = () => {
+        const ref = chartRef.current as any;
+        if (!ref) return null;
+        // RN Web ScrollView costuma expor `getScrollableNode()`
+        if (typeof ref.getScrollableNode === 'function') {
+            const node = ref.getScrollableNode();
+            if (node) return node as any;
+        }
+        return ref as any;
+    };
+
+    const getScrollX = () => {
+        const node = getChartScrollNode();
+        const x = node?.scrollLeft;
+        return typeof x === 'number' ? x : 0;
+    };
+
+    const setScrollX = (x: number) => {
+        const node = getChartScrollNode();
+        if (!node) return;
+
+        // Preferir API RN (quando existir) para não bagunçar layout do eixo Y.
+        if (typeof node.scrollTo === 'function') {
+            try {
+                node.scrollTo({ x, animated: false });
+                return;
+            } catch {
+                // fallback abaixo
+            }
+        }
+
+        if (typeof node.scrollLeft === 'number') {
+            const maxX = Math.max(0, (node.scrollWidth || 0) - (node.clientWidth || 0));
+            node.scrollLeft = Math.max(0, Math.min(maxX, x));
+        }
+    };
+
     const handleMouseDown = (e: any) => {
         if (!isWeb) return;
         setIsDragging(true);
+        try {
+            e?.preventDefault?.();
+        } catch {
+            // noop
+        }
         dragStartX.current = e.pageX ?? e.nativeEvent?.pageX ?? null;
-        if (dragWrapperRef.current && typeof dragWrapperRef.current.scrollLeft === 'number') {
-            dragStartScroll.current = dragWrapperRef.current.scrollLeft;
-        } else if (chartRef.current && typeof chartRef.current.scrollLeft === 'number') {
-            dragStartScroll.current = chartRef.current.scrollLeft;
-        } else {
-            dragStartScroll.current = 0;
+        dragStartScroll.current = getScrollX();
+
+        // Evita seleção de texto durante o drag (deixa o comportamento mais suave no web)
+        try {
+            document.body.style.userSelect = 'none';
+        } catch {
+            // noop
         }
     };
 
@@ -122,6 +166,12 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
         setIsDragging(false);
         dragStartX.current = null;
         dragStartScroll.current = null;
+
+        try {
+            document.body.style.userSelect = '';
+        } catch {
+            // noop
+        }
     };
 
     const handleMouseLeave = () => {
@@ -129,6 +179,12 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
         setIsDragging(false);
         dragStartX.current = null;
         dragStartScroll.current = null;
+
+        try {
+            document.body.style.userSelect = '';
+        } catch {
+            // noop
+        }
     };
 
     const handleMouseMove = (e: any) => {
@@ -137,11 +193,7 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
         const pageX = e.pageX ?? e.nativeEvent?.pageX ?? 0;
         const delta = dragStartX.current - pageX;
         const newScroll = (dragStartScroll.current || 0) + delta;
-        if (dragWrapperRef.current && typeof dragWrapperRef.current.scrollLeft === 'number') {
-            dragWrapperRef.current.scrollLeft = newScroll;
-        } else if (chartRef.current && typeof chartRef.current.scrollLeft === 'number') {
-            chartRef.current.scrollLeft = newScroll;
-        }
+        setScrollX(newScroll);
     };
 
     useEffect(() => {
