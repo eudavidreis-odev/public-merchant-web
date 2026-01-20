@@ -22,7 +22,7 @@ export type Category = {
 
 export type Order = {
     id: string;
-    status: 'Criado' | 'Confirmado' | 'Preparando' | 'Pronto' | 'Em entrega' | 'Entregue' | 'Cancelado';
+    status: 'Aguardando pagamento' | 'Pago' | 'Preparando' | 'Pronto' | 'Em entrega' | 'Entregue' | 'Cancelado';
     total: number; // Alterado de total_centavos
     items: { name: string; quantity: number }[];
     createdAt?: Timestamp;

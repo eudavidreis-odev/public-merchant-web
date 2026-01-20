@@ -20,8 +20,8 @@ import type { Order } from '../types';
 import './global.css';
 
 const ORDER_STATUSES: Order['status'][] = [
-  'Criado',
-  'Confirmado',
+  'Aguardando pagamento',
+  'Pago',
   'Preparando',
   'Pronto',
   'Em entrega',
@@ -30,8 +30,8 @@ const ORDER_STATUSES: Order['status'][] = [
 ];
 
 const ACTIVE_STATUSES: Order['status'][] = [
-  'Criado',
-  'Confirmado',
+  'Aguardando pagamento',
+  'Pago',
   'Preparando',
   'Pronto',
   'Em entrega',

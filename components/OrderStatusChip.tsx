@@ -15,9 +15,9 @@ interface OrderStatusChipProps {
 export function getOrderStatusStyle(status: Status) {
     // Paleta solicitada: ícone e texto na mesma cor específica
     switch (status) {
-        case 'Criado':
+        case 'Aguardando pagamento':
             return { icon: 'bell-outline', fg: '#9CA3AF', bg: '#F3F4F6' }; // Cinza
-        case 'Confirmado':
+        case 'Pago':
             return { icon: 'check-circle-outline', fg: '#3B82F6', bg: '#EFF6FF' }; // Azul
         case 'Preparando':
             return { icon: 'pot-steam-outline', fg: '#F97316', bg: '#FFF7ED' }; // Laranja

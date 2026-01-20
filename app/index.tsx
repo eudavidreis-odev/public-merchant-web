@@ -38,16 +38,16 @@ function formatDate(ts?: any): string {
 }
 
 const ACTIVE_STATUSES: Order['status'][] = [
-  'Criado',
-  'Confirmado',
+  'Aguardando pagamento',
+  'Pago',
   'Preparando',
   'Pronto',
   'Em entrega',
 ];
 
 const ORDER_STATUSES: Order['status'][] = [
-  'Criado',
-  'Confirmado',
+  'Aguardando pagamento',
+  'Pago',
   'Preparando',
   'Pronto',
   'Em entrega',
@@ -99,17 +99,13 @@ export default function DashboardScreen() {
   }, [todaysOrders]);
 
   const ordersByStatus = useMemo(() => {
-    const counts: Record<Order['status'], number> = {
-      Criado: 0,
-      Confirmado: 0,
-      Preparando: 0,
-      Pronto: 0,
-      'Em entrega': 0,
-      Entregue: 0,
-      Cancelado: 0,
-    };
+    const counts = ORDER_STATUSES.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {} as Record<Order['status'], number>);
+
     for (const o of todaysOrders) {
-      if (o.status in counts) {
+      if (typeof counts[o.status] === 'number') {
         counts[o.status] += 1;
       }
     }

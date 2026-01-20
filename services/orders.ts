@@ -29,6 +29,28 @@ export type FirestoreOrder = {
     merchantId?: string;
 };
 
+function normalizeOrderStatus(rawStatus: unknown): Order['status'] {
+    if (typeof rawStatus !== 'string') return 'Aguardando pagamento';
+
+    const status = rawStatus.trim();
+    if (status === 'Criado') return 'Aguardando pagamento';
+    if (status === 'Confirmado') return 'Pago';
+
+    const validStatuses: Order['status'][] = [
+        'Aguardando pagamento',
+        'Pago',
+        'Preparando',
+        'Pronto',
+        'Em entrega',
+        'Entregue',
+        'Cancelado',
+    ];
+
+    return validStatuses.includes(status as Order['status'])
+        ? (status as Order['status'])
+        : 'Aguardando pagamento';
+}
+
 /**
  * Assina pedidos em tempo real para um merchant específico.
  */
@@ -68,7 +90,7 @@ export function subscribeOrders(
 
                 const order: Order = {
                     id: document.id,
-                    status: (data.status as Order['status']) ?? 'Criado',
+                    status: normalizeOrderStatus(data.status),
                     total: Number(data.total_centavos ?? 0),
                     items: Array.isArray(data.items) ? data.items : [],
                     createdAt: data.createdAt,
