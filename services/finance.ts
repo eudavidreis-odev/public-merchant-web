@@ -97,6 +97,33 @@ export function useFinanceMetrics(
     }, [period, customRange]);
 
     const revenueMonthly: RevenuePoint[] = useMemo(() => {
+        if (period === 'today') {
+            const { start, end } = getPeriodRange(period, customRange);
+            const byHour = new Map<number, number>();
+
+            orders.forEach((o) => {
+                const created = o.createdAt?.toDate?.() ?? (o.createdAt as any);
+                if (!created) return;
+                if (created < start || created > end) return;
+                if (!SUCCESS_STATUSES.includes(o.status)) return;
+
+                const hour = created.getHours();
+                byHour.set(hour, (byHour.get(hour) || 0) + (o.total ?? 0) / 100);
+            });
+
+            // Série fixa (00h–23h) para manter espaçamento consistente e sem scroll.
+            const points: RevenuePoint[] = [];
+            for (let h = 0; h < 24; h += 1) {
+                const v = byHour.get(h) || 0;
+                points.push({
+                    label: h === 23 ? '23:59' : `${String(h).padStart(2, '0')}h`,
+                    value: v,
+                    dataPointText: formatBRL(v),
+                });
+            }
+            return points;
+        }
+
         const map: Record<string, number> = {};
         for (const day of daysInPeriod) map[day.key] = 0;
 

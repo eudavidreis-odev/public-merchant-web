@@ -3,7 +3,7 @@ import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { Text } from 'react-native-paper';
 import { CARD_PADDING } from '../../constants/card';
-import type { RevenuePoint } from '../../services/finance';
+import type { FinancePeriod, RevenuePoint } from '../../services/finance';
 import { palette, textSpacing, typography } from '../../styles/theme';
 
 // --- CONFIGURAÇÕES VISUAIS ---
@@ -24,6 +24,7 @@ const ARROW_X_ADJUST = -8.5;
 type RevenueChartProps = {
     data: RevenuePoint[];
     title?: string;
+    period?: FinancePeriod;
 };
 
 const aggregateDataByDate = (rawData: RevenuePoint[]) => {
@@ -39,10 +40,11 @@ const aggregateDataByDate = (rawData: RevenuePoint[]) => {
     }));
 };
 
-export default function RevenueChart({ data, title = 'Evolução da Receita' }: RevenueChartProps) {
+export default function RevenueChart({ data, title = 'Evolução da Receita', period }: RevenueChartProps) {
     const chartRef = useRef<any>(null);
     const dragWrapperRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [wrapperWidth, setWrapperWidth] = useState(0);
     const dragStartX = useRef<number | null>(null);
     const dragStartScroll = useRef<number | null>(null);
     const { width: screenWidth } = useWindowDimensions();
@@ -62,16 +64,45 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
 
     // Rewritten clean implementation below - fixes malformed JSX and logic
     const ADJUST_EXTRA = 8;
+
+    // Mede a largura real do container do gráfico para evitar "cortes" no fim
+    // quando o layout responsivo não bate exatamente com `screenWidth`.
+    const measuredContainerWidth = wrapperWidth > 0 ? wrapperWidth : Math.max(0, screenWidth - CARD_PADDING * 2);
     const visibleChartWidth = Math.max(
         0,
-        Math.min(screenWidth - CARD_PADDING * 2 - Y_AXIS_WIDTH - ADJUST_EXTRA, screenWidth)
+        Math.min(measuredContainerWidth - Y_AXIS_WIDTH - ADJUST_EXTRA, measuredContainerWidth)
     );
 
-    const spacing = SPACING;
-    const initialSpacing = INITIAL_SPACING;
-    const endSpacing = SPACING;
+    const isToday = period === 'today';
+
+    const baseSpacing = SPACING;
+    const baseInitialSpacing = INITIAL_SPACING;
+    const baseEndSpacing = SPACING;
+
+    // No modo "Hoje", os labels são curtos (ex: "18h"), mas precisam de folga
+    // no começo/fim para não serem cortados pelo overflow do card.
+    const xLabelWidth = isToday ? 48 : 80;
+    const edgePadding = isToday ? Math.ceil(xLabelWidth / 2) + 6 : 0;
+
+    const initialSpacing = isToday ? edgePadding : baseInitialSpacing;
+    const endSpacing = isToday ? edgePadding : baseEndSpacing;
+
+    const fixedSpacing = useMemo(() => {
+        if (!isToday) return baseSpacing;
+        if (dataForChart.length <= 1) return baseSpacing;
+
+        // Distribui igualmente os pontos usando toda a largura visível.
+        const usable = Math.max(0, visibleChartWidth - initialSpacing - endSpacing);
+        const s = usable / (dataForChart.length - 1);
+
+        // Evita spacing muito pequeno (pontos amontoados) e também previne casos extremos.
+        return Math.min(80, Math.max(6, Math.floor(s)));
+    }, [isToday, dataForChart.length, visibleChartWidth, baseSpacing, initialSpacing, endSpacing]);
+
+    const spacing = isToday ? fixedSpacing : baseSpacing;
 
     const isWeb = Platform.OS === 'web';
+    const disableScroll = isToday;
 
     const handleMouseDown = (e: any) => {
         if (!isWeb) return;
@@ -114,6 +145,7 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
     };
 
     useEffect(() => {
+        if (disableScroll) return;
         if (aggregatedData.length > 0) {
             setTimeout(() => {
                 try {
@@ -121,7 +153,7 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                 } catch { }
             }, 500);
         }
-    }, [aggregatedData]);
+    }, [aggregatedData, disableScroll]);
 
     useEffect(() => {
         if (!isWeb) return;
@@ -134,11 +166,14 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>Evolução diária do faturamento no período selecionado.</Text>
+                <Text style={styles.subtitle}>
+                    {isToday
+                        ? 'Evolução por hora do faturamento de hoje.'
+                        : 'Evolução diária do faturamento no período selecionado.'}
+                </Text>
             </View>
 
-            {isWeb ? (
-                // @ts-expect-error - elemento DOM em ambiente web
+            {isWeb && !disableScroll ? (
                 <div
                     ref={dragWrapperRef}
                     style={{ ...styles.chartWrapper, cursor: isDragging ? 'grabbing' : 'grab' }}
@@ -164,22 +199,24 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         isAnimated={false}
                         yAxisLabelWidth={Y_AXIS_WIDTH}
                         yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
-                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: typography.body }}
+                        xAxisLabelTextStyle={{
+                            color: palette.gray600,
+                            width: isToday ? 48 : 80,
+                            fontSize: isToday ? 10 : typography.body,
+                        }}
                         yAxisThickness={0}
                         rulesType="solid"
                         rulesColor={palette.gray200}
                         textFontSize={typography.body}
                         textColor={palette.gray900}
-                        yAxisIsFixed={true}
                         nestedScrollEnabled={true}
-                        disableScroll={false}
+                        disableScroll={disableScroll}
                         pointerConfig={{
                             pointerStripUptoDataPoint: true,
                             pointerColor: 'transparent',
                             pointerStripColor: 'transparent',
                             pointerStripWidth: 0,
                             radius: 0,
-                            snapToPoint: true,
                             activatePointersOnLongPress: false,
                             autoAdjustPointerLabelPosition: false,
                             pointerLabelWidth: TOOLTIP_WIDTH,
@@ -202,7 +239,14 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                     />
                 </div>
             ) : (
-                <View style={styles.chartWrapper} ref={dragWrapperRef as any}>
+                <View
+                    style={styles.chartWrapper}
+                    ref={dragWrapperRef as any}
+                    onLayout={(e) => {
+                        const w = e?.nativeEvent?.layout?.width;
+                        if (typeof w === 'number' && w > 0) setWrapperWidth(w);
+                    }}
+                >
                     <LineChart
                         scrollRef={chartRef}
                         data={dataForChart}
@@ -220,22 +264,24 @@ export default function RevenueChart({ data, title = 'Evolução da Receita' }: 
                         isAnimated={false}
                         yAxisLabelWidth={Y_AXIS_WIDTH}
                         yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
-                        xAxisLabelTextStyle={{ color: palette.gray600, width: 80, fontSize: typography.body }}
+                        xAxisLabelTextStyle={{
+                            color: palette.gray600,
+                            width: isToday ? 48 : 80,
+                            fontSize: isToday ? 10 : typography.body,
+                        }}
                         yAxisThickness={0}
                         rulesType="solid"
                         rulesColor={palette.gray200}
                         textFontSize={typography.body}
                         textColor={palette.gray900}
-                        yAxisIsFixed={true}
                         nestedScrollEnabled={true}
-                        disableScroll={false}
+                        disableScroll={disableScroll}
                         pointerConfig={{
                             pointerStripUptoDataPoint: true,
                             pointerColor: 'transparent',
                             pointerStripColor: 'transparent',
                             pointerStripWidth: 0,
                             radius: 0,
-                            snapToPoint: true,
                             activatePointersOnLongPress: false,
                             autoAdjustPointerLabelPosition: false,
                             pointerLabelWidth: TOOLTIP_WIDTH,

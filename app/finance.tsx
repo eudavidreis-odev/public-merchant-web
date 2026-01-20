@@ -172,7 +172,7 @@ export default function FinanceScreen() {
         )}
       </View>
 
-      <RevenueChart data={revenueMonthly} />
+      <RevenueChart data={revenueMonthly} period={period} />
       <CategoryRanking data={categoryRanking} />
 
       <MenuMatrix
