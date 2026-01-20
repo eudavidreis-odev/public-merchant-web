@@ -836,33 +836,33 @@ export default function ProductsScreen() {
                             </View>
                         )}
                         <DataTable>
-                            <DataTable.Header>
-                                <DataTable.Title style={{ flex: 0.8 }}>
-                                    <View style={styles.headerCell}><Text>Foto</Text></View>
+                            <DataTable.Header style={styles.dataTableHeader}>
+                                <DataTable.Title style={StyleSheet.flatten([styles.titleCenter, { flex: 0.8 }])}>
+                                    <View style={styles.headerCellCenter}><Text>Foto</Text></View>
                                 </DataTable.Title>
-                                <DataTable.Title onPress={() => handleSort('name')} style={{ flex: 2 }}>
-                                    <View style={styles.headerCell}>
+                                <DataTable.Title onPress={() => handleSort('name')} style={StyleSheet.flatten([styles.titleLeft, { flex: 2 }])}>
+                                    <View style={styles.headerCellLeft}>
                                         <Text>Nome</Text>
-                                        <IconButton icon={getSortIcon('name')} size={16} style={styles.sortIcon} />
+                                        <IconButton icon={getSortIcon('name')} size={16} style={styles.sortIconButton} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title onPress={() => handleSort('category')} style={{ flex: 1.2 }}>
-                                    <View style={styles.headerCell}>
+                                <DataTable.Title onPress={() => handleSort('category')} style={StyleSheet.flatten([styles.titleCenter, { flex: 1.2 }])}>
+                                    <View style={styles.headerCellCenter}>
                                         <Text>Categoria</Text>
-                                        <IconButton icon={getSortIcon('category')} size={16} style={styles.sortIcon} />
+                                        <IconButton icon={getSortIcon('category')} size={16} style={styles.sortIconButton} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title onPress={() => handleSort('price')} style={{ flex: 1 }}>
-                                    <View style={styles.headerCell}>
+                                <DataTable.Title onPress={() => handleSort('price')} style={StyleSheet.flatten([styles.titleCenter, { flex: 1 }])}>
+                                    <View style={styles.headerCellCenter}>
                                         <Text>Preço</Text>
-                                        <IconButton icon={getSortIcon('price')} size={16} style={styles.sortIcon} />
+                                        <IconButton icon={getSortIcon('price')} size={16} style={styles.sortIconButton} />
                                     </View>
                                 </DataTable.Title>
-                                <DataTable.Title style={{ flex: 1 }}>
-                                    <View style={styles.headerCell}><Text>Disponível</Text></View>
+                                <DataTable.Title style={StyleSheet.flatten([styles.titleCenter, { flex: 1 }])}>
+                                    <View style={styles.headerCellCenter}><Text>Disponível</Text></View>
                                 </DataTable.Title>
-                                <DataTable.Title style={{ flex: 1 }}>
-                                    <View style={styles.headerCell}><Text>Ações</Text></View>
+                                <DataTable.Title style={StyleSheet.flatten([styles.titleCenter, { flex: 1 }])}>
+                                    <View style={styles.headerCellCenter}><Text>Ações</Text></View>
                                 </DataTable.Title>
                             </DataTable.Header>
 
@@ -875,7 +875,7 @@ export default function ProductsScreen() {
                                         onMouseLeave: () => setHoveredRowId(null),
                                     } as any)}
                                 >
-                                    <DataTable.Cell style={{ flex: 0.8 }}>
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 0.8 }])}>
                                         {product.imageBase64 ? (
                                             <Image
                                                 source={{ uri: buildImageUriFromProduct(product) }}
@@ -887,12 +887,12 @@ export default function ProductsScreen() {
                                             </View>
                                         )}
                                     </DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 2 }}>
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellLeft, { flex: 2 }])}>
                                         <Text variant="titleMedium" style={{ fontWeight: '600' }}>
                                             {product.name}
                                         </Text>
                                     </DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 1.2, justifyContent: 'center' }}>
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1.2 }])}>
                                         <Chip
                                             icon={getCategoryIcon(product.category)}
                                             style={{ alignSelf: 'center' }}
@@ -900,16 +900,16 @@ export default function ProductsScreen() {
                                             {product.category}
                                         </Chip>
                                     </DataTable.Cell>
-                                    <DataTable.Cell numeric style={{ flex: 1, justifyContent: 'center' }}>
-                                        {formatBRL(product.price)}
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1 }])}>
+                                        <Text style={styles.cellTextCenter}>{formatBRL(product.price)}</Text>
                                     </DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 1, justifyContent: 'center' }}>
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1 }])}>
                                         <Switch
                                             value={product.available !== false}
                                             onValueChange={(v) => handleAvailabilityToggle(product, v)}
                                         />
                                     </DataTable.Cell>
-                                    <DataTable.Cell style={{ flex: 1, justifyContent: 'center' }}>
+                                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1 }])}>
                                         <View style={styles.actionsCell}>
                                             <IconButton
                                                 mode="contained"
@@ -1038,10 +1038,46 @@ const styles = StyleSheet.create({
         padding: spacing.xxl,
         alignItems: 'center',
     },
-    headerCell: {
+    dataTableHeader: {
+        alignItems: 'center',
+        paddingVertical: 6,
+        minHeight: 48,
+    },
+    headerCellCenter: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        flex: 1,
+        width: '100%',
+        minHeight: 0,
+        paddingVertical: 0,
+    },
+    headerCellLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        flex: 1,
+        width: '100%',
+        minHeight: 0,
+        paddingVertical: 0,
+    },
+    titleCenter: {
+        justifyContent: 'center',
+    },
+    titleLeft: {
+        justifyContent: 'flex-start',
+    },
+    cellCenter: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cellLeft: {
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    cellTextCenter: {
+        textAlign: 'center',
+        width: '100%',
     },
     tableRowHover: {
         backgroundColor: '#f7f7f9',
@@ -1050,9 +1086,16 @@ const styles = StyleSheet.create({
         margin: 0,
         padding: 0,
     },
+    sortIconButton: {
+        margin: 0,
+        padding: 0,
+        width: 20,
+        height: 20,
+        alignSelf: 'center',
+    },
     actionsCell: {
         flexDirection: 'row',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
     },
