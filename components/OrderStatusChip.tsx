@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import type { Order } from '../../types';
 
 type Status = Order['status'];
@@ -12,7 +12,7 @@ interface OrderStatusChipProps {
     selected?: boolean;
 }
 
-function getStatusColors(_theme: ReturnType<typeof useTheme>, status: Status) {
+export function getOrderStatusStyle(status: Status) {
     // Paleta solicitada: ícone e texto na mesma cor específica
     switch (status) {
         case 'Criado':
@@ -39,8 +39,7 @@ const OrderStatusChip: React.FC<OrderStatusChipProps> = ({
     onPress,
     selected = false,
 }) => {
-    const theme = useTheme();
-    const c = getStatusColors(theme, status);
+    const c = getOrderStatusStyle(status);
     // Cores mais fortes para selecionado
     const strongBg = c.bg === '#EFF6FF' ? '#3B82F6' :
         c.bg === '#FEF2F2' ? '#EF4444' :
