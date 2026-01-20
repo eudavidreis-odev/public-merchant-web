@@ -13,12 +13,16 @@ import {
   Title,
   useTheme,
 } from 'react-native-paper';
+import DateRangePicker from '../components/DateRangePicker';
 import OrderStatusChip from '../components/OrderStatusChip';
 import * as OrdersService from '../services/orders';
 import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
 import { ORDER_STATUSES } from '../types/orderStatus';
 import './global.css';
+
+type HistoryDatePreset = 'all' | 'last7' | 'month' | 'custom';
+type CustomRange = { start: Date | null; end: Date | null };
 
 function formatBRLFromCentavos(total_centavos: number): string {
   if (typeof total_centavos !== 'number') return 'R$ 0,00';
@@ -49,6 +53,50 @@ function formatDate(timestamp?: any): string {
   }
 }
 
+function darkenColor(input: string, amount: number): string {
+  // amount: 0.10 => 10% mais escuro
+  if (!input || typeof input !== 'string') return input;
+  const amt = Math.min(1, Math.max(0, amount));
+
+  const hex = input.trim();
+  const hexMatch = /^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$/.exec(hex);
+  if (hexMatch) {
+    const rgbHex = hexMatch[1];
+    const alphaHex = hexMatch[2];
+
+    const r = parseInt(rgbHex.slice(0, 2), 16);
+    const g = parseInt(rgbHex.slice(2, 4), 16);
+    const b = parseInt(rgbHex.slice(4, 6), 16);
+
+    const scale = 1 - amt;
+    const rr = Math.round(r * scale);
+    const gg = Math.round(g * scale);
+    const bb = Math.round(b * scale);
+
+    const out = `#${rr.toString(16).padStart(2, '0')}${gg.toString(16).padStart(2, '0')}${bb
+      .toString(16)
+      .padStart(2, '0')}`;
+    return alphaHex ? `${out}${alphaHex.toLowerCase()}` : out;
+  }
+
+  const rgbaMatch = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+)\s*)?\)$/.exec(
+    input.trim()
+  );
+  if (rgbaMatch) {
+    const r = Number(rgbaMatch[1]);
+    const g = Number(rgbaMatch[2]);
+    const b = Number(rgbaMatch[3]);
+    const a = rgbaMatch[4] != null ? Number(rgbaMatch[4]) : null;
+    const scale = 1 - amt;
+    const rr = Math.round(r * scale);
+    const gg = Math.round(g * scale);
+    const bb = Math.round(b * scale);
+    return a == null ? `rgb(${rr}, ${gg}, ${bb})` : `rgba(${rr}, ${gg}, ${bb}, ${a})`;
+  }
+
+  return input;
+}
+
 export default function OrdersScreen() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +108,8 @@ export default function OrdersScreen() {
   const [todaySearchQuery, setTodaySearchQuery] = useState('');
   const [historyStatuses, setHistoryStatuses] = useState<Order['status'][]>([]);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
-  const [historyDatePreset, setHistoryDatePreset] = useState<'all' | 'last7' | 'month'>('all');
+  const [historyDatePreset, setHistoryDatePreset] = useState<HistoryDatePreset>('all');
+  const [historyCustomRange, setHistoryCustomRange] = useState<CustomRange>({ start: null, end: null });
   // Ordenação
   type SortField = 'id' | 'customerName' | 'createdAt' | 'total' | 'status';
   const [sortField, setSortField] = useState<SortField>('createdAt');
@@ -191,7 +240,10 @@ export default function OrdersScreen() {
       const q = historySearchQuery.trim().toLowerCase();
       base = base.filter((o) => {
         const name = (o.customerName || '').toLowerCase();
-        return name.includes(q) || o.id.toLowerCase().includes(q);
+        const hasProductId =
+          Array.isArray(o.items) &&
+          o.items.some((it: any) => String(it?.productId || '').toLowerCase().includes(q));
+        return name.includes(q) || o.id.toLowerCase().includes(q) || hasProductId;
       });
     }
 
@@ -210,12 +262,28 @@ export default function OrdersScreen() {
         if (historyDatePreset === 'month') {
           return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
         }
+        if (historyDatePreset === 'custom') {
+          const start = historyCustomRange.start;
+          const end = historyCustomRange.end;
+
+          if (!start && !end) return true;
+
+          const startBound = start ? new Date(start) : null;
+          if (startBound) startBound.setHours(0, 0, 0, 0);
+
+          const endBound = end ? new Date(end) : null;
+          if (endBound) endBound.setHours(23, 59, 59, 999);
+
+          if (startBound && d < startBound) return false;
+          if (endBound && d > endBound) return false;
+          return true;
+        }
         return true;
       });
     }
 
     return sortOrders(base);
-  }, [historyBaseOrders, historyStatuses, historySearchQuery, historyDatePreset, sortField, sortDirection]);
+  }, [historyBaseOrders, historyStatuses, historySearchQuery, historyDatePreset, historyCustomRange, sortField, sortDirection]);
 
   const openMenu = (orderId: string) =>
     setMenuVisible((prev) => ({ ...prev, [orderId]: true }));
@@ -481,37 +549,79 @@ export default function OrdersScreen() {
           </View>
 
           {/* Toolbar com busca e filtro de data */}
-          <View style={styles.toolbar}>
-            <View style={{ flex: 1 }}>
+          <View style={StyleSheet.flatten([styles.toolbar, { flexDirection: 'column', alignItems: 'stretch' }])}>
+            <View style={{ width: '100%' }}>
               <TextInput
                 mode="outlined"
-                placeholder="Buscar por ID ou Cliente"
+                placeholder="Buscar por Cliente ou ID do Produto"
                 value={historySearchQuery}
                 onChangeText={(txt) => setHistorySearchQuery(txt)}
               />
             </View>
 
-            <View style={styles.datePresetContainer}>
+            <View style={StyleSheet.flatten([styles.datePresetContainer, { width: '100%', flexWrap: 'wrap' }])}>
               {[
                 { key: 'all', label: 'Todos' },
                 { key: 'last7', label: 'Últimos 7 dias' },
                 { key: 'month', label: 'Este mês' },
+                { key: 'custom', label: 'Período personalizado' },
               ].map((p) => (
-                <Pressable
-                  key={p.key}
-                  onPress={() => setHistoryDatePreset(p.key as 'all' | 'last7' | 'month')}
-                  style={StyleSheet.flatten([
-                    styles.presetChip,
-                    historyDatePreset === p.key && styles.presetChipActive,
-                  ])}
-                >
-                  <Text style={StyleSheet.flatten([
-                    styles.presetLabel,
-                    historyDatePreset === p.key && styles.presetLabelActive,
-                  ])}>{p.label}</Text>
-                </Pressable>
+                (() => {
+                  const isActive = historyDatePreset === p.key;
+                  const inactiveBg =
+                    (theme.colors as any)?.elevation?.level1 ??
+                    (theme.colors as any)?.surfaceVariant ??
+                    theme.colors.surface;
+                  const activeBgBase =
+                    (theme.colors as any)?.elevation?.level3 ??
+                    (theme.colors as any)?.surfaceVariant ??
+                    theme.colors.surface;
+                  const activeBg = darkenColor(activeBgBase, 0.1);
+                  const inactiveBorder = (theme.colors as any)?.outlineVariant ?? theme.colors.outline;
+
+                  return (
+                    <Pressable
+                      key={p.key}
+                      onPress={() => {
+                        const next = p.key as HistoryDatePreset;
+                        setHistoryDatePreset(next);
+                        if (next === 'custom' && !historyCustomRange.start && !historyCustomRange.end) {
+                          const today = new Date();
+                          setHistoryCustomRange({ start: today, end: today });
+                        }
+                      }}
+                      style={StyleSheet.flatten([
+                        styles.presetChip,
+                        {
+                          backgroundColor: isActive ? activeBg : inactiveBg,
+                          borderColor: isActive ? theme.colors.outline : inactiveBorder,
+                          borderWidth: isActive ? 2 : 1,
+                        },
+                        isActive && styles.presetChipActive,
+                      ])}
+                    >
+                      <Text style={StyleSheet.flatten([
+                        styles.presetLabel,
+                        {
+                          color: isActive
+                            ? theme.colors.onSurface
+                            : ((theme.colors as any)?.onSurfaceVariant ?? theme.colors.onSurface),
+                        },
+                        isActive && styles.presetLabelActive,
+                      ])}>{p.label}</Text>
+                    </Pressable>
+                  );
+                })()
               ))}
             </View>
+
+            {historyDatePreset === 'custom' && (
+              <DateRangePicker
+                start={historyCustomRange.start}
+                end={historyCustomRange.end}
+                onChange={setHistoryCustomRange}
+              />
+            )}
           </View>
 
           <DataTable>
@@ -797,17 +907,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   presetChipActive: {
-    backgroundColor: '#e5e7eb',
+    // Mantido para ajustes finos via StyleSheet (o contraste vem do theme no render)
   },
   presetLabel: {
-    color: '#374151',
     fontWeight: '600',
   },
   presetLabelActive: {
-    color: '#111827',
+    fontWeight: '700',
   },
   header: {
     backgroundColor: '#f7f7f7',
