@@ -6,6 +6,7 @@ import {
   Button,
   DataTable,
   Dialog,
+  Icon,
   IconButton,
   Portal,
   Text,
@@ -393,53 +394,79 @@ export default function OrdersScreen() {
           </View>
 
           <DataTable>
-            <DataTable.Header style={styles.header}>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])} onPress={() => {
+            <DataTable.Header style={StyleSheet.flatten([styles.header, styles.dataTableHeader])}>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleLeft, { flex: 2 }])} onPress={() => {
                 if (sortField === 'id') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('id');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Pedido / Cliente</Text>
+                <View style={styles.headerCellLeft}>
+                  <Text style={styles.headerLabelLeft}>Pedido / Cliente</Text>
                   {sortField === 'id' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])} onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter, { flex: 1.2 }])} onPress={() => {
                 if (sortField === 'createdAt') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('createdAt');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Data</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Data</Text>
                   {sortField === 'createdAt' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={styles.headerCell} numeric onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter])} onPress={() => {
                 if (sortField === 'total') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('total');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Total</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Total</Text>
                   {sortField === 'total' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])} onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter, { flex: 1.5 }])} onPress={() => {
                 if (sortField === 'status') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('status');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Status</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Status</Text>
                   {sortField === 'status' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={styles.headerCell} numeric>
-                <Text>Ações</Text>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter])}>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Ações</Text>
+                </View>
               </DataTable.Title>
             </DataTable.Header>
 
@@ -451,8 +478,8 @@ export default function OrdersScreen() {
                       styles.row,
                       hovered && { backgroundColor: theme.colors.surfaceVariant },
                     ])}>
-                    <DataTable.Cell style={{ flex: 2 }}>
-                      <View>
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellLeft, { flex: 2 }])}>
+                      <View style={styles.cellInnerLeft}>
                         <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
                         <Text
                           variant="bodySmall"
@@ -469,13 +496,13 @@ export default function OrdersScreen() {
                         </Text>
                       </View>
                     </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 1.2 }}>
-                      {formatDate(order.createdAt)}
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1.2 }])}>
+                      <Text style={styles.cellTextCenter}>{formatDate(order.createdAt)}</Text>
                     </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      {formatBRLFromCentavos(order.total)}
+                    <DataTable.Cell style={styles.cellCenter}>
+                      <Text style={styles.cellTextCenter}>{formatBRLFromCentavos(order.total)}</Text>
                     </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 1.5 }}>
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1.5 }])}>
                       <OrderStatusChip
                         status={order.status}
                         onPress={() => openMenu(order.id)}
@@ -501,21 +528,23 @@ export default function OrdersScreen() {
                         </Portal>
                       )}
                     </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      <Link
-                        href={{
-                          pathname: '/chat/[orderId]',
-                          params: {
-                            orderId: order.id,
-                            merchantId: order.merchantId,
-                            returnTo: 'orders',
-                            customerName: order.customerName,
-                          },
-                        }}
-                        asChild>
-                        <IconButton icon="chat-outline" size={20} />
-                      </Link>
-                      <IconButton icon="chevron-right" size={20} />
+                    <DataTable.Cell style={styles.cellCenter}>
+                      <View style={styles.actionsCell}>
+                        <Link
+                          href={{
+                            pathname: '/chat/[orderId]',
+                            params: {
+                              orderId: order.id,
+                              merchantId: order.merchantId,
+                              returnTo: 'orders',
+                              customerName: order.customerName,
+                            },
+                          }}
+                          asChild>
+                          <IconButton icon="chat-outline" size={20} />
+                        </Link>
+                        <IconButton icon="chevron-right" size={20} />
+                      </View>
                     </DataTable.Cell>
                   </DataTable.Row>
                 )}
@@ -638,53 +667,79 @@ export default function OrdersScreen() {
           </View>
 
           <DataTable>
-            <DataTable.Header style={styles.header}>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 2 }])} onPress={() => {
+            <DataTable.Header style={StyleSheet.flatten([styles.header, styles.dataTableHeader])}>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleLeft, { flex: 2 }])} onPress={() => {
                 if (sortField === 'id') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('id');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Pedido / Cliente</Text>
+                <View style={styles.headerCellLeft}>
+                  <Text style={styles.headerLabelLeft}>Pedido / Cliente</Text>
                   {sortField === 'id' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.2 }])} onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter, { flex: 1.2 }])} onPress={() => {
                 if (sortField === 'createdAt') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('createdAt');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Data</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Data</Text>
                   {sortField === 'createdAt' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={styles.headerCell} numeric onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter])} onPress={() => {
                 if (sortField === 'total') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('total');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Total</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Total</Text>
                   {sortField === 'total' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, { flex: 1.5 }])} onPress={() => {
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter, { flex: 1.5 }])} onPress={() => {
                 if (sortField === 'status') setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
                 setSortField('status');
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text>Status</Text>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Status</Text>
                   {sortField === 'status' && (
-                    <IconButton icon={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'} size={16} style={styles.sortIcon} />
+                    <View style={styles.sortIconContainer}>
+                      <Icon
+                        source={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+                        size={16}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
                   )}
                 </View>
               </DataTable.Title>
-              <DataTable.Title style={styles.headerCell} numeric>
-                <Text>Ações</Text>
+              <DataTable.Title style={StyleSheet.flatten([styles.headerCell, styles.titleCenter])}>
+                <View style={styles.headerCellCenter}>
+                  <Text style={styles.headerLabelCenter}>Ações</Text>
+                </View>
               </DataTable.Title>
             </DataTable.Header>
 
@@ -696,8 +751,8 @@ export default function OrdersScreen() {
                       styles.row,
                       hovered && { backgroundColor: theme.colors.surfaceVariant },
                     ])}>
-                    <DataTable.Cell style={{ flex: 2 }}>
-                      <View>
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellLeft, { flex: 2 }])}>
+                      <View style={styles.cellInnerLeft}>
                         <Text variant="labelMedium">{`#${order.id.substring(0, 5)}`}</Text>
                         <Text
                           variant="bodySmall"
@@ -714,13 +769,13 @@ export default function OrdersScreen() {
                         </Text>
                       </View>
                     </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 1.2 }}>
-                      {formatDate(order.createdAt)}
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1.2 }])}>
+                      <Text style={styles.cellTextCenter}>{formatDate(order.createdAt)}</Text>
                     </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      {formatBRLFromCentavos(order.total)}
+                    <DataTable.Cell style={styles.cellCenter}>
+                      <Text style={styles.cellTextCenter}>{formatBRLFromCentavos(order.total)}</Text>
                     </DataTable.Cell>
-                    <DataTable.Cell style={{ flex: 1.5 }}>
+                    <DataTable.Cell style={StyleSheet.flatten([styles.cellCenter, { flex: 1.5 }])}>
                       <OrderStatusChip
                         status={order.status}
                         onPress={() => openMenu(order.id)}
@@ -746,21 +801,23 @@ export default function OrdersScreen() {
                         </Portal>
                       )}
                     </DataTable.Cell>
-                    <DataTable.Cell numeric>
-                      <Link
-                        href={{
-                          pathname: '/chat/[orderId]',
-                          params: {
-                            orderId: order.id,
-                            merchantId: order.merchantId,
-                            returnTo: 'orders',
-                            customerName: order.customerName,
-                          },
-                        }}
-                        asChild>
-                        <IconButton icon="chat-outline" size={20} />
-                      </Link>
-                      <IconButton icon="chevron-right" size={20} />
+                    <DataTable.Cell style={styles.cellCenter}>
+                      <View style={styles.actionsCell}>
+                        <Link
+                          href={{
+                            pathname: '/chat/[orderId]',
+                            params: {
+                              orderId: order.id,
+                              merchantId: order.merchantId,
+                              returnTo: 'orders',
+                              customerName: order.customerName,
+                            },
+                          }}
+                          asChild>
+                          <IconButton icon="chat-outline" size={20} />
+                        </Link>
+                        <IconButton icon="chevron-right" size={20} />
+                      </View>
                     </DataTable.Cell>
                   </DataTable.Row>
                 )}
@@ -940,10 +997,61 @@ const styles = StyleSheet.create({
   headerCell: {
     paddingHorizontal: 8,
   },
+  dataTableHeader: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    minHeight: 48,
+  },
+  titleLeft: {
+    justifyContent: 'flex-start',
+  },
+  titleCenter: {
+    justifyContent: 'center',
+  },
+  headerCellLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: 1,
+    width: '100%',
+  },
+  headerCellCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    width: '100%',
+  },
+  headerLabelLeft: {
+    textAlign: 'left',
+  },
+  headerLabelCenter: {
+    textAlign: 'center',
+  },
   row: {
     minHeight: 60,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+  },
+  cellLeft: {
+    justifyContent: 'flex-start',
+  },
+  cellCenter: {
+    justifyContent: 'center',
+  },
+  cellInnerLeft: {
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  cellTextCenter: {
+    width: '100%',
+    textAlign: 'center',
+  },
+  actionsCell: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusMenuOverlay: {
     position: 'absolute',
@@ -992,5 +1100,12 @@ const styles = StyleSheet.create({
   sortIcon: {
     margin: 0,
     padding: 0,
+  },
+  sortIconContainer: {
+    marginLeft: 4,
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
