@@ -15,14 +15,16 @@ import {
 } from 'react-native-paper';
 import DateRangePicker from '../components/DateRangePicker';
 import OrderStatusChip from '../components/OrderStatusChip';
+import {
+  type HistoryDatePreset,
+  type OrdersSortField,
+  useOrdersFilters
+} from '../contexts/OrdersFiltersContext';
 import * as OrdersService from '../services/orders';
 import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
 import { ORDER_STATUSES } from '../types/orderStatus';
 import './global.css';
-
-type HistoryDatePreset = 'all' | 'last7' | 'month' | 'custom';
-type CustomRange = { start: Date | null; end: Date | null };
 
 function formatBRLFromCentavos(total_centavos: number): string {
   if (typeof total_centavos !== 'number') return 'R$ 0,00';
@@ -103,17 +105,28 @@ export default function OrdersScreen() {
   const [menuVisible, setMenuVisible] = useState<Record<string, boolean>>({});
   const [confirmChange, setConfirmChange] = useState<{ order: Order; newStatus: Order['status'] } | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  // Filtros por card
-  const [todayStatuses, setTodayStatuses] = useState<Order['status'][]>([]);
-  const [todaySearchQuery, setTodaySearchQuery] = useState('');
-  const [historyStatuses, setHistoryStatuses] = useState<Order['status'][]>([]);
-  const [historySearchQuery, setHistorySearchQuery] = useState('');
-  const [historyDatePreset, setHistoryDatePreset] = useState<HistoryDatePreset>('all');
-  const [historyCustomRange, setHistoryCustomRange] = useState<CustomRange>({ start: null, end: null });
-  // Ordenação
-  type SortField = 'id' | 'customerName' | 'createdAt' | 'total' | 'status';
-  const [sortField, setSortField] = useState<SortField>('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const {
+    todayStatuses,
+    setTodayStatuses,
+    todaySearchQuery,
+    setTodaySearchQuery,
+    historyStatuses,
+    setHistoryStatuses,
+    historySearchQuery,
+    setHistorySearchQuery,
+    historyDatePreset,
+    setHistoryDatePreset,
+    historyCustomRange,
+    setHistoryCustomRange,
+    sortField,
+    setSortField,
+    sortDirection,
+    setSortDirection,
+  } = useOrdersFilters();
+
+  // Tipagem local (mantém o arquivo explícito)
+  type SortField = OrdersSortField;
   const router = useRouter();
   const theme = useTheme();
 
