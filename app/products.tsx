@@ -34,6 +34,22 @@ function buildImageUriFromProduct(p?: Partial<Product>): string | undefined {
     return `data:${mime};base64,${b64}`;
 }
 
+function buildProductPlaceholderSvgUri(colors: {
+    background: string;
+    border: string;
+    foreground: string;
+}): string {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect x="32" y="32" width="448" height="448" rx="24" fill="${colors.background}" stroke="${colors.border}" stroke-width="8" />
+  <rect x="120" y="152" width="272" height="208" rx="16" fill="none" stroke="${colors.border}" stroke-width="10" />
+  <circle cx="180" cy="214" r="22" fill="${colors.foreground}" opacity="0.8" />
+  <path d="M140 342 L228 252 L292 308 L340 260 L392 342" fill="none" stroke="${colors.foreground}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.8" />
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="28" fill="${colors.foreground}" opacity="0.75">Imagem do produto</text>
+</svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
 type SortField = ProductsSortField;
 type SortDirection = ProductsSortDirection;
 
@@ -308,6 +324,7 @@ interface ProductFormProps {
 }
 
 function ProductForm({ visible, onDismiss, product, onSave, categories, onManageCategories }: ProductFormProps) {
+    const theme = useTheme();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -319,6 +336,13 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
     const { width, height } = useWindowDimensions();
     const isWide = width >= 1024;
     const modalMaxHeight = Math.min(720, Math.max(480, Math.floor(height * 0.9)));
+
+    const placeholderImageUri = buildProductPlaceholderSvgUri({
+        background: (theme.colors as any)?.surfaceVariant ?? theme.colors.surface,
+        border: (theme.colors as any)?.outlineVariant ?? theme.colors.outline,
+        foreground: (theme.colors as any)?.onSurfaceVariant ?? theme.colors.onSurface,
+    });
+    const effectiveImageUri = image ?? placeholderImageUri;
 
     useEffect(() => {
         if (product) {
@@ -426,18 +450,29 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                 <Card style={[styles.modalCard, isWide && styles.modalCardWide, { maxHeight: modalMaxHeight }]}>
                     <Card.Title
                         title={product ? 'Editar produto' : 'Adicionar produto'}
+                        subtitle={
+                            product
+                                ? 'Atualize as informações, categoria, preço e imagem do produto.'
+                                : 'Cadastre um novo item no seu catálogo. Você pode trocar a imagem depois.'
+                        }
+                        subtitleNumberOfLines={2}
                     />
                     {isWide ? (
                         <Card.Content style={{ paddingBottom: 0 }}>
                             <ScrollView style={{ maxHeight: modalMaxHeight - 160 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.sm }}>
                                 <View style={[styles.formRow, { gap: spacing.xl }]}>
                                     <View style={[styles.formColumn, { maxWidth: 320 }]}>
-                                        {image ? (
-                                            <View style={styles.imagePreviewContainer}>
-                                                <Image source={{ uri: image }} style={[styles.previewImageLarge, { alignSelf: 'flex-start', maxWidth: 300 }]} />
-                                                <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>Remover Imagem</Button>
-                                            </View>
-                                        ) : null}
+                                        <View style={styles.imagePreviewContainer}>
+                                            <Image
+                                                source={{ uri: effectiveImageUri }}
+                                                style={[styles.previewImageLarge, { alignSelf: 'flex-start', maxWidth: 300 }]}
+                                            />
+                                            {image ? (
+                                                <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>
+                                                    Remover Imagem
+                                                </Button>
+                                            ) : null}
+                                        </View>
                                         <Button mode="outlined" onPress={pickImage} disabled={imageLoading} loading={imageLoading} icon="image">
                                             {image ? 'Trocar imagem' : imageLoading ? 'Carregando...' : 'Selecionar imagem'}
                                         </Button>
@@ -479,12 +514,14 @@ function ProductForm({ visible, onDismiss, product, onSave, categories, onManage
                     ) : (
                         <ScrollView style={[styles.modalScrollView, { maxHeight: modalMaxHeight - 160 }]} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.sm }}>
                             <Card.Content style={styles.formContent}>
-                                {image && (
-                                    <View style={styles.imagePreviewContainer}>
-                                        <Image source={{ uri: image }} style={styles.previewImageLarge} />
-                                        <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>Remover Imagem</Button>
-                                    </View>
-                                )}
+                                <View style={styles.imagePreviewContainer}>
+                                    <Image source={{ uri: effectiveImageUri }} style={styles.previewImageLarge} />
+                                    {image ? (
+                                        <Button onPress={() => setImage(null)} style={{ marginTop: spacing.sm }}>
+                                            Remover Imagem
+                                        </Button>
+                                    ) : null}
+                                </View>
                                 <TextInput label="Nome do Produto" mode="outlined" value={name} onChangeText={setName} style={{ marginBottom: spacing.sm }} />
                                 <TextInput label="Descrição (multilinha)" mode="outlined" multiline numberOfLines={4} value={description} onChangeText={setDescription} style={{ marginBottom: spacing.sm }} />
                                 <TextInput
