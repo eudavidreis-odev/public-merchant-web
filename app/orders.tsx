@@ -383,7 +383,7 @@ export default function OrdersScreen() {
                     { backgroundColor: c.bg, borderColor: c.fg },
                   ])}
                 >
-                  <MaterialCommunityIcons name={c.icon as any} size={18} color={c.fg} />
+                  <MaterialCommunityIcons name={c.icon as any} size={22} color={c.fg} />
                   <Text style={StyleSheet.flatten([styles.statusSummaryName, { color: c.fg }])}>
                     {status}
                   </Text>
@@ -1153,29 +1153,34 @@ const styles = StyleSheet.create({
   statusSummaryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
   statusSummaryItem: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
     flexGrow: 1,
-    flexBasis: 110,
-    minWidth: 110,
-    justifyContent: 'center',
+    flexBasis: 140,
+    minWidth: 140,
+    minHeight: 140,
+    justifyContent: 'space-between',
   },
   statusSummaryName: {
     fontWeight: '600',
     opacity: 0.9,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
+    fontSize: 13,
+    maxWidth: 140,
+    minHeight: 34,
   },
   statusSummaryCount: {
     fontWeight: '800',
-    fontSize: typography.heading3,
+    fontSize: typography.heading2,
+    marginTop: 2,
   },
 });

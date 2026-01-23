@@ -202,7 +202,7 @@ export default function DashboardScreen() {
                 }
               >
                 <DataTable.Cell style={{ flex: 2 }}>
-                  <Text style={{ fontWeight: '600' }}>{o.customerName || 'Cliente'}</Text>
+                  <Text style={{ fontWeight: '600' }}>{o.customerName+' - ' || 'Cliente -'}</Text>
                   <Text style={{ color: '#6b7280' }}>#{o.id.substring(0, 6)}</Text>
                 </DataTable.Cell>
                 <DataTable.Cell numeric>
