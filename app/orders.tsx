@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -24,7 +25,7 @@ import {
 import * as OrdersService from '../services/orders';
 import { spacing, textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
-import { ORDER_STATUSES } from '../types/orderStatus';
+import { getOrderStatusStyle, ORDER_STATUSES } from '../types/orderStatus';
 import './global.css';
 
 function formatBRLFromCentavos(total_centavos: number): string {
@@ -214,6 +215,18 @@ export default function OrdersScreen() {
     });
   }, [allOrders]);
 
+  const ordersByStatus = useMemo(() => {
+    const counts = ORDER_STATUSES.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {} as Record<Order['status'], number>);
+
+    for (const o of todaysOrders) {
+      if (typeof counts[o.status] === 'number') counts[o.status] += 1;
+    }
+    return counts;
+  }, [todaysOrders]);
+
   const historyBaseOrders = useMemo(() => {
     const now = new Date();
     return allOrders.filter((o) => {
@@ -353,6 +366,35 @@ export default function OrdersScreen() {
         <Text style={styles.subtitle}>
           Acompanhe e gerencie os pedidos recebidos em tempo real.
         </Text>
+
+        {/* Card: Pedidos por Status (Hoje) */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Pedidos por Status</Text>
+          <Text style={styles.cardDescription}>Contagem de pedidos de hoje por etapa.</Text>
+          <View style={styles.statusSummaryRow}>
+            {ORDER_STATUSES.map((status) => {
+              const c = getOrderStatusStyle(status);
+              const count = ordersByStatus[status] ?? 0;
+              return (
+                <View
+                  key={status}
+                  style={StyleSheet.flatten([
+                    styles.statusSummaryItem,
+                    { backgroundColor: c.bg, borderColor: c.fg },
+                  ])}
+                >
+                  <MaterialCommunityIcons name={c.icon as any} size={18} color={c.fg} />
+                  <Text style={StyleSheet.flatten([styles.statusSummaryName, { color: c.fg }])}>
+                    {status}
+                  </Text>
+                  <Text style={StyleSheet.flatten([styles.statusSummaryCount, { color: c.fg }])}>
+                    {count}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Card: Hoje */}
         <View style={styles.card}>
@@ -1107,5 +1149,33 @@ const styles = StyleSheet.create({
     height: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  statusSummaryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statusSummaryItem: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexGrow: 1,
+    flexBasis: 110,
+    minWidth: 110,
+    justifyContent: 'center',
+  },
+  statusSummaryName: {
+    fontWeight: '600',
+    opacity: 0.9,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  statusSummaryCount: {
+    fontWeight: '800',
+    fontSize: typography.heading3,
   },
 });
