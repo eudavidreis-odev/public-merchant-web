@@ -1,13 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
     Button,
     Card,
     Chip,
     DataTable,
     Dialog,
-    Divider,
     HelperText,
     IconButton,
     List,
@@ -92,20 +91,47 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
     const [editing, setEditing] = useState<Category | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Category | null>(null);
+    const [viewMode, setViewMode] = useState<'LIST' | 'FORM'>('LIST');
     const { height } = useWindowDimensions();
     const modalMaxHeight = Math.min(640, Math.max(360, Math.floor(height * 0.85)));
 
+    const resetForm = () => {
+        setName('');
+        setSelectedIcon('tag');
+        setEditing(null);
+    };
+
     useEffect(() => {
-        if (category) {
-            setEditing(category);
-            setName(category.name || '');
-            setSelectedIcon(category.icon || 'tag');
+        if (visible) {
+            setViewMode('LIST');
+            if (category) {
+                setEditing(category);
+                setName(category.name || '');
+                setSelectedIcon(category.icon || 'tag');
+            } else {
+                resetForm();
+            }
         } else {
-            setEditing(null);
-            setName('');
-            setSelectedIcon('tag');
+            resetForm();
         }
     }, [category, visible]);
+
+    const enterListMode = () => {
+        setViewMode('LIST');
+        resetForm();
+    };
+
+    const startCreateFlow = () => {
+        resetForm();
+        setViewMode('FORM');
+    };
+
+    const startEditFlow = (cat: Category) => {
+        setEditing(cat);
+        setName(cat.name || '');
+        setSelectedIcon(cat.icon || 'tag');
+        setViewMode('FORM');
+    };
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -123,7 +149,7 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
                 Alert.alert('Sucesso', 'Categoria criada!');
             }
             onSave();
-            onDismiss();
+            enterListMode();
         } catch (error) {
             console.error('Erro ao salvar categoria:', error);
             Alert.alert('Erro', 'Falha ao salvar categoria');
@@ -147,7 +173,7 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
             Alert.alert('Sucesso', 'Categoria excluída!');
             setConfirmDeleteTarget(null);
             onSave();
-            onDismiss();
+            enterListMode();
         } catch (error) {
             console.error('Erro ao excluir categoria:', error);
             Alert.alert('Erro', 'Falha ao excluir categoria');
@@ -160,100 +186,147 @@ function CategoryModal({ visible, onDismiss, category, onSave, categories }: Cat
         <Portal>
             <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modalContainer}>
                 <Card style={[styles.categoryModalCard, { maxHeight: modalMaxHeight }]}>
-                    <Card.Title
-                        title={editing ? 'Editar Categoria' : 'Nova Categoria'}
-                        subtitle="Crie, edite e exclua categorias. Excluir pode afetar produtos vinculados."
-                    />
-                    <Card.Content>
-                        <ScrollView style={{ maxHeight: modalMaxHeight - 140 }} contentContainerStyle={{ paddingBottom: spacing.md }}>
-                            {categories.length > 0 && (
-                                <View style={{ marginBottom: spacing.md }}>
-                                    <Text variant="labelLarge" style={{ marginBottom: 8 }}>Categorias existentes</Text>
-                                    <ScrollView style={{ maxHeight: 200 }}>
-                                        {categories.map(c => (
-                                            <View key={c.id} style={styles.categoryRow}>
-                                                <Button
-                                                    mode={editing?.id === c.id ? 'contained-tonal' : 'text'}
-                                                    icon={c.icon || 'tag'}
-                                                    onPress={() => {
-                                                        setEditing(c);
-                                                        setName(c.name);
-                                                        setSelectedIcon(c.icon || 'tag');
-                                                    }}
+                    <Card.Content style={{ paddingBottom: 0 }}>
+                        {viewMode === 'LIST' ? (
+                            <View style={styles.listContainer}>
+                                <View style={styles.listHeaderRow}>
+                                    <View>
+                                        <Text style={styles.sectionTitle}>Categorias</Text>
+                                        <Text style={styles.sectionSubtitle}>Visualize, edite ou crie categorias para o cardápio.</Text>
+                                    </View>
+                                </View>
+
+                                <ScrollView
+                                    style={[styles.categoryCardsScroll, { maxHeight: modalMaxHeight * 0.7 }]}
+                                    contentContainerStyle={{ paddingVertical: spacing.sm, gap: spacing.xs }}
+                                    showsVerticalScrollIndicator={false}
+                                >
+                                    {categories.length > 0 ? (
+                                        categories.map((c) => (
+                                            <View key={c.id} style={styles.listItem}>
+                                                <Pressable
+                                                    onPress={() => startEditFlow(c)}
+                                                    style={({ hovered, pressed }) => [
+                                                        styles.listItemPressable,
+                                                        hovered && styles.listItemHover,
+                                                        pressed && styles.listItemPressed,
+                                                    ]}
                                                 >
-                                                    {c.name}
-                                                </Button>
-                                                <View style={{ flexDirection: 'row' }}>
+                                                    <View style={styles.listItemLeft}>
+                                                        <IconButton icon={c.icon || 'tag'} size={22} containerColor="#f0f4ff" />
+                                                        <View>
+                                                            <Text style={styles.listItemTitle}>{c.name}</Text>
+                                                            <Text style={styles.listItemSubtitle}>Toque para editar</Text>
+                                                        </View>
+                                                    </View>
+                                                </Pressable>
+                                                <View style={styles.listItemActions}>
                                                     <IconButton
+                                                        mode="contained"
+                                                        containerColor="#e8f0ff"
                                                         icon="pencil"
-                                                        onPress={() => {
-                                                            setEditing(c);
-                                                            setName(c.name);
-                                                            setSelectedIcon(c.icon || 'tag');
-                                                        }}
+                                                        size={20}
+                                                        onPress={() => startEditFlow(c)}
                                                     />
                                                     <IconButton
+                                                        mode="contained"
+                                                        containerColor="#ffecec"
                                                         icon="delete"
                                                         iconColor="#d32f2f"
+                                                        size={20}
                                                         onPress={() => confirmDelete(c)}
                                                     />
                                                 </View>
                                             </View>
-                                        ))}
-                                    </ScrollView>
-                                    <Button
-                                        icon="plus"
-                                        onPress={() => {
-                                            setEditing(null);
-                                            setName('');
-                                            setSelectedIcon('tag');
-                                        }}
-                                    >
-                                        Nova categoria
-                                    </Button>
-                                    <Divider style={{ marginVertical: spacing.md }} />
-                                </View>
-                            )}
-                            <TextInput
-                                label="Nome da Categoria"
-                                mode="outlined"
-                                value={name}
-                                onChangeText={setName}
-                                style={{ marginBottom: spacing.lg }}
-                            />
-
-                            <Text variant="labelLarge" style={{ marginBottom: spacing.sm }}>Selecione um Ícone:</Text>
-                            <View style={styles.iconGrid}>
-                                {AVAILABLE_ICONS.map((icon) => (
-                                    <Chip
-                                        key={icon}
-                                        selected={selectedIcon === icon}
-                                        onPress={() => setSelectedIcon(icon)}
-                                        icon={icon}
-                                        style={styles.iconChip}
-                                    >
-                                        {ICON_LABELS_PTBR[icon] ?? icon}{selectedIcon === icon ? ' ✓' : ''}
-                                    </Chip>
-                                ))}
+                                        ))
+                                    ) : (
+                                        <View style={styles.emptyCategoryBox}>
+                                            <Text style={styles.emptyCategoryTitle}>Nenhuma categoria ainda</Text>
+                                            <Text style={styles.sectionSubtitle}>Crie sua primeira categoria com o botão acima.</Text>
+                                        </View>
+                                    )}
+                                </ScrollView>
                             </View>
-                        </ScrollView>
+                        ) : (
+                            <View style={styles.formContainer}>
+                                <View style={styles.formHeader}>
+                                    <IconButton
+                                        icon="arrow-left"
+                                        onPress={enterListMode}
+                                        style={styles.formBackButton}
+                                        size={22}
+                                    />
+                                    <View>
+                                        <Text style={styles.formTitle}>{editing ? 'Editar Categoria' : 'Nova Categoria'}</Text>
+                                        <Text style={styles.sectionSubtitle}>Preencha os campos para salvar e voltar à lista.</Text>
+                                    </View>
+                                </View>
+                                <ScrollView
+                                    style={styles.formScroll}
+                                    contentContainerStyle={{ paddingBottom: spacing.lg, gap: spacing.md }}
+                                    showsVerticalScrollIndicator={false}
+                                >
+                                    <TextInput
+                                        label="Nome da Categoria"
+                                        placeholder="Ex: Pizzas Especiais"
+                                        mode="outlined"
+                                        value={name}
+                                        onChangeText={setName}
+                                        style={styles.categoryInput}
+                                        contentStyle={styles.categoryInputContent}
+                                        outlineStyle={styles.categoryInputOutline}
+                                    />
+
+                                    <View>
+                                        <Text style={styles.sectionTitle}>Ícone</Text>
+                                        <Text style={styles.sectionSubtitle}>Escolha um ícone para facilitar a identificação.</Text>
+                                        <View style={styles.iconGrid}>
+                                            {AVAILABLE_ICONS.map((icon) => {
+                                                const isSelected = selectedIcon === icon;
+                                                return (
+                                                    <Pressable
+                                                        key={icon}
+                                                        onPress={() => setSelectedIcon(icon)}
+                                                        style={({ hovered, pressed }) => [
+                                                            styles.iconTile,
+                                                            isSelected && styles.iconTileSelected,
+                                                            hovered && styles.iconTileHover,
+                                                            pressed && styles.iconTilePressed,
+                                                        ]}
+                                                    >
+                                                        <IconButton icon={icon} size={24} />
+                                                        <Text style={styles.iconTileLabel} numberOfLines={1}>
+                                                            {ICON_LABELS_PTBR[icon] ?? icon}
+                                                        </Text>
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </View>
+                                    </View>
+                                </ScrollView>
+                            </View>
+                        )}
                     </Card.Content>
-                    <Card.Actions style={{ justifyContent: 'space-between' }}>
-                        <View>
-                            {editing && (
-                                <Button onPress={() => confirmDelete(editing)} textColor="#d32f2f" icon="delete" disabled={deleting}>
-                                    Excluir
+                    <Card.Actions style={styles.modalFooter}>
+                        {viewMode === 'LIST' ? (
+                            <View style={styles.footerContent}>
+                                <Button mode="text" onPress={onDismiss}>
+                                    Fechar
                                 </Button>
-                            )}
-                        </View>
-                        <View style={{ flexDirection: 'row' }}>
-                            <Button onPress={onDismiss} disabled={loading || deleting}>
-                                Cancelar
-                            </Button>
-                            <Button mode="contained" onPress={handleSave} loading={loading} disabled={loading || deleting}>
-                                Salvar
-                            </Button>
-                        </View>
+                                <Button mode="contained" icon="plus" onPress={startCreateFlow}>
+                                    Adicionar Nova Categoria
+                                </Button>
+                            </View>
+                        ) : (
+                            <View style={styles.footerContent}>
+                                <Button mode="text" onPress={enterListMode} disabled={loading || deleting}>
+                                    Cancelar
+                                </Button>
+                                <Button mode="contained" onPress={handleSave} loading={loading} disabled={loading || deleting}>
+                                    {editing ? 'Salvar alterações' : 'Salvar'}
+                                </Button>
+                            </View>
+                        )}
                     </Card.Actions>
                     <Portal>
                         <Dialog visible={!!confirmDeleteTarget} onDismiss={() => setConfirmDeleteTarget(null)}>
@@ -1033,7 +1106,112 @@ const styles = StyleSheet.create({
     },
     categoryModalCard: {
         width: '100%',
-        maxWidth: 500,
+        maxWidth: 560,
+        overflow: 'hidden',
+    },
+    listContainer: {
+        gap: spacing.md,
+    },
+    listHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: spacing.sm,
+    },
+    sectionTitle: {
+        fontSize: typography.cardTitle,
+        fontWeight: '700',
+        marginBottom: spacing.xs,
+    },
+    sectionSubtitle: {
+        opacity: 0.75,
+        marginBottom: spacing.sm,
+    },
+    categoryCardsScroll: {
+        width: '100%',
+    },
+    listItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#fff',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        gap: spacing.sm,
+    },
+    listItemPressable: {
+        flex: 1,
+    },
+    listItemHover: {
+        backgroundColor: '#f8fafc',
+    },
+    listItemPressed: {
+        opacity: 0.95,
+        transform: [{ scale: 0.995 }],
+    },
+    listItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+    },
+    listItemActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    listItemTitle: {
+        fontWeight: '700',
+        fontSize: 16,
+    },
+    listItemSubtitle: {
+        opacity: 0.65,
+        fontSize: typography.caption,
+    },
+    formContainer: {
+        gap: spacing.md,
+    },
+    formHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.xs,
+    },
+    formBackButton: {
+        margin: 0,
+    },
+    formTitle: {
+        fontWeight: '700',
+        fontSize: typography.cardTitle,
+    },
+    formScroll: {
+        maxHeight: '72%',
+        width: '100%',
+    },
+    emptyCategoryBox: {
+        padding: spacing.lg,
+        borderRadius: 12,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        alignItems: 'flex-start',
+        gap: spacing.xs,
+    },
+    emptyCategoryTitle: {
+        fontWeight: '700',
+        fontSize: typography.cardTitle,
+    },
+    categoryInput: {
+        marginBottom: spacing.sm,
+    },
+    categoryInputContent: {
+        height: 52,
+        fontSize: typography.body,
+    },
+    categoryInputOutline: {
+        borderRadius: 14,
     },
     formContent: {
         gap: spacing.md,
@@ -1142,8 +1320,38 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
         marginBottom: spacing.lg,
     },
-    iconChip: {
-        marginBottom: spacing.xs,
+    iconTile: {
+        width: '23%',
+        minWidth: 72,
+        aspectRatio: 1,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#e4e7ec',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: spacing.xs,
+        gap: spacing.xs,
+    },
+    iconTileSelected: {
+        borderColor: '#4f46e5',
+        backgroundColor: '#eef2ff',
+        shadowColor: '#4f46e5',
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+    },
+    iconTileHover: {
+        backgroundColor: '#f8fafc',
+    },
+    iconTilePressed: {
+        opacity: 0.95,
+        transform: [{ scale: 0.98 }],
+    },
+    iconTileLabel: {
+        fontSize: typography.caption,
+        textAlign: 'center',
+        opacity: 0.8,
     },
     categoryChips: {
         flexDirection: 'row',
@@ -1155,9 +1363,19 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         alignSelf: 'flex-start',
     },
-    categoryRow: {
+    modalFooter: {
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: '#e6e6e6',
+        backgroundColor: '#fff',
+    },
+    footerContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flex: 1,
+        gap: spacing.sm,
     },
 });
