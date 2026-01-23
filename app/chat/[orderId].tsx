@@ -63,9 +63,15 @@ export default function ChatScreen() {
     const orderPath = `merchants/${merchantId}/pedidos/${orderId}`;
 
     const headerTitle = useMemo(() => {
-        if (customerName && String(customerName).trim().length > 0) return `Chat com ${customerName}`;
-        return 'Chat';
-    }, [customerName]);
+        const trimmedName = customerName && String(customerName).trim();
+        const orderLabel = orderId ? `Pedido ${orderId}` : '';
+
+        if (trimmedName) {
+            return `${trimmedName} • ${orderLabel}`;
+        }
+
+        return orderLabel || 'Chat';
+    }, [customerName, orderId]);
 
     const handleBack = () => {
         // Prioriza o destino explícito para manter o retorno consistente
