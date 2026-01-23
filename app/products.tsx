@@ -675,6 +675,7 @@ export default function ProductsScreen() {
     const { activeCategories, setActiveCategories, sortField, setSortField, sortDirection, setSortDirection } = useProductsFilters();
     const [reopenAfterCategories, setReopenAfterCategories] = useState(false);
     const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+    const [availabilityConfirm, setAvailabilityConfirm] = useState<{ product: Product; value: boolean } | null>(null);
 
     const loadProducts = React.useCallback(async () => {
         try {
@@ -827,12 +828,24 @@ export default function ProductsScreen() {
         );
     };
 
-    const handleAvailabilityToggle = async (p: Product, value: boolean) => {
+    const handleAvailabilityToggle = (p: Product, value: boolean) => {
+        const previous = p.available !== false; // default true
+        if (previous === value) return;
+        setAvailabilityConfirm({ product: p, value });
+    };
+
+    const confirmAvailabilityChange = async () => {
+        if (!availabilityConfirm) return;
+        const { product, value } = availabilityConfirm;
+        const previous = product.available !== false;
+        setAvailabilityConfirm(null);
+        setProducts(prev => prev.map(x => x.id === product.id ? { ...x, available: value } : x));
         try {
-            await ProductsService.updateProductAvailability(p.id, value);
-            setProducts(prev => prev.map(x => x.id === p.id ? { ...x, available: value } : x));
+            await ProductsService.updateProductAvailability(product.id, value);
+            await loadProducts();
         } catch (e) {
             console.error('Erro ao atualizar disponibilidade:', e);
+            setProducts(prev => prev.map(x => x.id === product.id ? { ...x, available: previous } : x));
             Alert.alert('Erro', 'Não foi possível atualizar a disponibilidade.');
         }
     };
@@ -875,6 +888,30 @@ export default function ProductsScreen() {
                     categories={categories}
                     onManageCategories={handleManageCategories}
                 />
+                <Portal>
+                    <Dialog
+                        visible={!!availabilityConfirm}
+                        onDismiss={() => setAvailabilityConfirm(null)}
+                        style={{ width: '50%', maxWidth: 420, minWidth: 280, alignSelf: 'center' }}
+                    >
+                        <Dialog.Title>
+                            {availabilityConfirm?.value ? 'Ativar produto' : 'Pausar produto'}
+                        </Dialog.Title>
+                        <Dialog.Content>
+                            <Text>
+                                {availabilityConfirm?.product
+                                    ? `Deseja ${availabilityConfirm.value ? 'ativar' : 'pausar'} "${availabilityConfirm.product.name}"?`
+                                    : 'Confirmar alteração de disponibilidade?'}
+                            </Text>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button onPress={() => setAvailabilityConfirm(null)}>Cancelar</Button>
+                            <Button mode="contained" onPress={confirmAvailabilityChange}>
+                                Confirmar
+                            </Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
 
                 <CategoryModal
                     visible={categoryModalVisible}
