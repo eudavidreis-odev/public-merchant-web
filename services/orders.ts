@@ -80,11 +80,9 @@ export function subscribeOrders(
     const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
-            console.log('[OrdersService] Recebido snapshot do Firestore:', snapshot.size, 'documentos.');
             const orders: Order[] = [];
             snapshot.forEach((document) => {
                 const data = document.data() as FirestoreOrder;
-                console.log('[OrdersService] Dados brutos do documento:', document.id, data);
 
                 // Extrai o merchantId do path para garantir consistência
                 let merchantId = data.merchantId;
@@ -106,7 +104,6 @@ export function subscribeOrders(
                 };
                 orders.push(order);
             });
-            console.log('[OrdersService] Pedidos processados para atualização:', orders.length, 'pedidos.');
             onUpdate(orders);
         },
         (error) => {
@@ -127,7 +124,6 @@ export async function updateOrderStatus(
     orderId: string,
     status: Order['status']
 ): Promise<void> {
-    console.log(`[OrdersService] Tentando atualizar status para "${status}" no pedido "${orderId}" do merchant "${merchantId}"`);
     if (!merchantId || !orderId) {
         console.error('[OrdersService] ID do pedido ou do lojista ausente.');
         throw new Error(
@@ -138,7 +134,6 @@ export async function updateOrderStatus(
     const ref = doc(db, 'merchants', merchantId, 'pedidos', orderId);
     try {
         await updateDoc(ref, { status, updatedAt: Timestamp.now() });
-        console.log(`[OrdersService] Status do pedido "${orderId}" atualizado com sucesso para "${status}".`);
     } catch (error) {
         console.error(`[OrdersService] Erro ao atualizar o status do pedido "${orderId}":`, error);
         throw error; // Re-lança o erro para o chamador lidar com a UI

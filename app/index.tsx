@@ -83,13 +83,22 @@ export default function DashboardScreen() {
   }, [orders]);
 
   const kpis = useMemo(() => {
-    const revenueCents = todaysOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-    const ticketMedioCents = todaysOrders.length ? Math.round(revenueCents / todaysOrders.length) : 0;
+    // Receita confirmada: apenas pedidos entregues
+    const deliveredOrders = todaysOrders.filter((o) => o.status === 'Entregue');
+    const revenueCents = deliveredOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const ticketMedioCents = deliveredOrders.length ? Math.round(revenueCents / deliveredOrders.length) : 0;
 
-    const revenue30dCents = last30Orders.reduce((sum, o) => sum + (o.total || 0), 0);
+    // Projeção: pedidos pagos e em andamento (após "Pago")
+    const paidStatuses: Order['status'][] = ['Pago', 'Preparando', 'Pronto', 'Em entrega', 'Entregue'];
+    const paidOrders = todaysOrders.filter((o) => paidStatuses.includes(o.status));
+    const projecaoCents = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+    const delivered30d = last30Orders.filter((o) => o.status === 'Entregue');
+    const revenue30dCents = delivered30d.reduce((sum, o) => sum + (o.total || 0), 0);
 
     return {
       faturamentoDia: formatBRLFromCentavos(revenueCents),
+      projecaoDia: formatBRLFromCentavos(projecaoCents),
       ticketMedio: formatBRLFromCentavos(ticketMedioCents),
       faturamento30d: formatBRLFromCentavos(revenue30dCents),
     };
@@ -131,12 +140,17 @@ export default function DashboardScreen() {
             onPress={() => router.push({ pathname: '/finance', params: { period: 'today' } })}
           />
           <KpiCard
+            title="Projeção (Hoje)"
+            value={kpis.projecaoDia}
+            onPress={() => router.push({ pathname: '/finance', params: { period: 'today' } })}
+          />
+          <KpiCard
             title="Ticket Médio"
             value={kpis.ticketMedio}
             onPress={() => router.push({ pathname: '/finance', params: { period: 'today' } })}
           />
           <KpiCard
-            title="Faturamento (Últimos 30 dias)"
+            title="Faturamento (30d)"
             value={kpis.faturamento30d}
             onPress={() => router.push({ pathname: '/finance', params: { period: '30d' } })}
           />
@@ -202,7 +216,7 @@ export default function DashboardScreen() {
                 }
               >
                 <DataTable.Cell style={{ flex: 2 }}>
-                  <Text style={{ fontWeight: '600' }}>{o.customerName+' - ' || 'Cliente -'}</Text>
+                  <Text style={{ fontWeight: '600' }}>{o.customerName + ' - ' || 'Cliente -'}</Text>
                   <Text style={{ color: '#6b7280' }}>#{o.id.substring(0, 6)}</Text>
                 </DataTable.Cell>
                 <DataTable.Cell numeric>

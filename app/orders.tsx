@@ -136,7 +136,6 @@ export default function OrdersScreen() {
     setLoading(true);
     const unsubscribe = OrdersService.subscribeOrders(
       (newOrders) => {
-        console.log('[OrdersScreen] Recebidos', newOrders.length, 'pedidos do serviço.');
         setAllOrders(newOrders);
         setLoading(false);
       },

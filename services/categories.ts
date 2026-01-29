@@ -42,7 +42,6 @@ async function ensureDefaultCategories(): Promise<void> {
     }
 
     // Popula categorias padrão
-    console.log('Populando categorias padrão...');
     for (const category of DEFAULT_CATEGORIES) {
         await addDoc(categoriesRef, {
             name: category.name,
@@ -50,7 +49,6 @@ async function ensureDefaultCategories(): Promise<void> {
             createdAt: Timestamp.now(),
         });
     }
-    console.log('Categorias padrão criadas com sucesso!');
 }
 
 /**

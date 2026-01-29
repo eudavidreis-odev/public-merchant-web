@@ -8,6 +8,11 @@ export type RevenuePoint = { value: number; label: string; dataPointText?: strin
 export type CategoryPoint = { value: number; label: string; frontColor?: string };
 export type MenuItemPoint = { id: string; name: string; revenue: number; volume: number; type: string };
 
+// TODO: Adicionar seção na tela de finanças para análise de:
+// - Pedidos cancelados (valor perdido, motivos)
+// - Pedidos aguardando pagamento (valor em espera)
+// - Taxa de conversão (pagos vs cancelados)
+// - Comparativo de receita entregue vs total pago
 const SUCCESS_STATUSES: Order['status'][] = ['Entregue'];
 
 function formatBRL(value: number) {
