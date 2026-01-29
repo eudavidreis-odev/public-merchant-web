@@ -33,6 +33,18 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Do not commit environment or sensitive config files
+.env
+.env.local
+*.local.env
+
+# Firebase / native config
+google-services.json
+GoogleService-Info.plist
+
+# Config templates should be committed instead of real credentials
+config/firebaseConfig.ts
+
 # typescript
 *.tsbuildinfo
 
