@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { DataTable, Text } from 'react-native-paper';
 import OrderStatusChip from '../components/OrderStatusChip';
 import { CARD_PADDING } from '../constants/card';
+import { useOrdersFilters } from '../contexts/OrdersFiltersContext';
 import * as OrdersService from '../services/orders';
 import { textSpacing, typography } from '../styles/theme';
 import type { Order } from '../types';
@@ -48,6 +49,7 @@ const KpiCard = ({ title, value, onPress }: { title: string; value: string; onPr
 export default function DashboardScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const router = useRouter();
+  const { setTodayStatuses } = useOrdersFilters();
 
   useEffect(() => {
     const unsub = OrdersService.subscribeOrders(
@@ -158,34 +160,36 @@ export default function DashboardScreen() {
       </View>
 
       {/* Card de Pedidos por Status */}
-      <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
-        onPress={() => router.push('/orders')}
-        android_ripple={{ color: '#eee' }}
-      >
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Pedidos por Status</Text>
-        <Text style={styles.sectionDescription}>Contagem de pedidos de hoje por etapa.</Text>
+        <Text style={styles.sectionDescription}>Contagem de pedidos de hoje por etapa. Toque em um status para filtrar.</Text>
         <View style={styles.statusSummaryRow}>
           {ORDER_STATUSES.map((status) => {
             const c = getOrderStatusStyle(status);
             const count = ordersByStatus[status] ?? 0;
             return (
-              <View
+              <Pressable
                 key={status}
-                style={StyleSheet.flatten([
+                style={({ pressed }) => StyleSheet.flatten([
                   styles.statusSummaryItem,
                   { backgroundColor: c.bg, borderColor: c.fg },
+                  pressed && { opacity: 0.7 },
                 ])}
+                onPress={() => {
+                  setTodayStatuses([status]);
+                  router.push('/orders');
+                }}
+                android_ripple={{ color: c.fg, borderless: false }}
               >
                 <MaterialCommunityIcons name={c.icon as any} size={18} color={c.fg} />
                 <Text style={StyleSheet.flatten([styles.statusSummaryCount, { color: c.fg }])}>
                   {count}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
         </View>
-      </Pressable>
+      </View>
 
       {/* Recent Orders */}
       <Pressable

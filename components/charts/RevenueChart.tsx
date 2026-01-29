@@ -25,6 +25,7 @@ type RevenueChartProps = {
     data: RevenuePoint[];
     title?: string;
     period?: FinancePeriod;
+    isHourly?: boolean; // Indica se os dados são por hora (24 pontos fixos)
 };
 
 const aggregateDataByDate = (rawData: RevenuePoint[]) => {
@@ -40,7 +41,7 @@ const aggregateDataByDate = (rawData: RevenuePoint[]) => {
     }));
 };
 
-export default function RevenueChart({ data, title = 'Evolução da Receita', period }: RevenueChartProps) {
+export default function RevenueChart({ data, title = 'Evolução da Receita', period, isHourly }: RevenueChartProps) {
     const chartRef = useRef<any>(null);
     const dragWrapperRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -73,7 +74,13 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
         Math.min(measuredContainerWidth - Y_AXIS_WIDTH - ADJUST_EXTRA, measuredContainerWidth)
     );
 
-    const isToday = period === 'today';
+    // Detecta se é visualização por hora:
+    // 1. Se isHourly for explicitamente passado
+    // Detecta se é visualização por hora:
+    // 1. Se isHourly for explicitamente passado
+    // 2. Se period === 'today'
+    // 3. Se temos exatamente 24 pontos de dados (indicando dados por hora)
+    const isHourlyView = isHourly || period === 'today' || dataForChart.length === 24;
 
     const baseSpacing = SPACING;
     const baseInitialSpacing = INITIAL_SPACING;
@@ -81,15 +88,15 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
 
     // Labels do eixo X precisam de folga no começo/fim para não serem cortados
     // pelo `overflow: 'hidden'` do card.
-    const xLabelWidth = isToday ? 48 : 80;
+    const xLabelWidth = isHourlyView ? 48 : 80;
     const edgePaddingToday = Math.ceil(xLabelWidth / 2) + 6;
     const edgePaddingNonTodayStart = Math.ceil(80 / 2) + 6; // suficiente p/ exibir datas (DD/MM/AA)
 
-    const initialSpacing = isToday ? edgePaddingToday : Math.max(baseInitialSpacing, edgePaddingNonTodayStart);
-    const endSpacing = isToday ? edgePaddingToday : baseEndSpacing;
+    const initialSpacing = isHourlyView ? edgePaddingToday : Math.max(baseInitialSpacing, edgePaddingNonTodayStart);
+    const endSpacing = isHourlyView ? edgePaddingToday : baseEndSpacing;
 
     const fixedSpacing = useMemo(() => {
-        if (!isToday) return baseSpacing;
+        if (!isHourlyView) return baseSpacing;
         if (dataForChart.length <= 1) return baseSpacing;
 
         // Distribui igualmente os pontos usando toda a largura visível.
@@ -98,12 +105,12 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
 
         // Evita spacing muito pequeno (pontos amontoados) e também previne casos extremos.
         return Math.min(80, Math.max(6, Math.floor(s)));
-    }, [isToday, dataForChart.length, visibleChartWidth, baseSpacing, initialSpacing, endSpacing]);
+    }, [isHourlyView, dataForChart.length, visibleChartWidth, baseSpacing, initialSpacing, endSpacing]);
 
-    const spacing = isToday ? fixedSpacing : baseSpacing;
+    const spacing = isHourlyView ? fixedSpacing : baseSpacing;
 
     const isWeb = Platform.OS === 'web';
-    const disableScroll = isToday;
+    const disableScroll = isHourlyView;
 
     const getChartScrollNode = () => {
         const ref = chartRef.current as any;
@@ -219,8 +226,8 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.subtitle}>
-                    {isToday
-                        ? 'Evolução por hora do faturamento de hoje.'
+                    {isHourlyView
+                        ? 'Evolução por hora do faturamento (00h - 23:59).'
                         : 'Evolução diária do faturamento no período selecionado.'}
                 </Text>
             </View>
@@ -253,8 +260,8 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
                         yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
                         xAxisLabelTextStyle={{
                             color: palette.gray600,
-                            width: isToday ? 48 : 80,
-                            fontSize: isToday ? 10 : typography.body,
+                            width: isHourlyView ? 48 : 80,
+                            fontSize: isHourlyView ? 10 : typography.body,
                         }}
                         yAxisThickness={0}
                         rulesType="solid"
@@ -318,8 +325,8 @@ export default function RevenueChart({ data, title = 'Evolução da Receita', pe
                         yAxisTextStyle={{ color: palette.gray600, fontSize: typography.body }}
                         xAxisLabelTextStyle={{
                             color: palette.gray600,
-                            width: isToday ? 48 : 80,
-                            fontSize: isToday ? 10 : typography.body,
+                            width: isHourlyView ? 48 : 80,
+                            fontSize: isHourlyView ? 10 : typography.body,
                         }}
                         yAxisThickness={0}
                         rulesType="solid"

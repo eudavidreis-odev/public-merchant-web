@@ -1,7 +1,8 @@
 
 import { Link, usePathname } from 'expo-router';
 import { StyleSheet as RNStyleSheet, StyleSheet, Text, View } from 'react-native';
-import { List, useTheme } from 'react-native-paper';
+import { Badge, List, useTheme } from 'react-native-paper';
+import { useChatNotifications } from '../contexts/ChatNotificationsContext';
 
 const menuItems = [
   { key: 'index', title: 'Dashboard', icon: 'view-dashboard', path: '/' },
@@ -13,6 +14,7 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const theme = useTheme();
+  const { totalUnread } = useChatNotifications();
 
   return (
     <View style={styles.sidebar}>
@@ -39,6 +41,20 @@ export default function Sidebar() {
                 <List.Item
                   title={item.title}
                   left={(props) => <List.Icon {...props} icon={item.icon} />}
+                  right={() =>
+                    item.key === 'orders' && totalUnread > 0 ? (
+                      <Badge
+                        style={{
+                          backgroundColor: '#f44336',
+                          color: '#fff',
+                          marginRight: 12,
+                          alignSelf: 'center',
+                        }}
+                      >
+                        {totalUnread}
+                      </Badge>
+                    ) : null
+                  }
                   style={RNStyleSheet.flatten([
                     styles.item,
                     isActive && styles.activeItem,

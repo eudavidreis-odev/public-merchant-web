@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
+  Badge,
   Button,
   DataTable,
   Dialog,
@@ -17,6 +18,7 @@ import {
 } from 'react-native-paper';
 import DateRangePicker from '../components/DateRangePicker';
 import OrderStatusChip from '../components/OrderStatusChip';
+import { useChatNotifications } from '../contexts/ChatNotificationsContext';
 import {
   type HistoryDatePreset,
   type OrdersSortField,
@@ -99,6 +101,47 @@ function darkenColor(input: string, amount: number): string {
   }
 
   return input;
+}
+
+// Componente auxiliar para ícone de chat com badge
+function ChatIconWithBadge({ orderId, merchantId, customerName }: { orderId: string; merchantId?: string; customerName?: string }) {
+  const { unreadByOrder } = useChatNotifications();
+  const unreadCount = unreadByOrder.get(orderId) || 0;
+  const router = useRouter();
+
+  const handlePress = (e: any) => {
+    e.stopPropagation(); // Impede que o clique propague para o Pressable pai
+    router.push({
+      pathname: '/chat/[orderId]',
+      params: {
+        orderId,
+        merchantId,
+        returnTo: 'orders',
+        customerName,
+      },
+    });
+  };
+
+  return (
+    <Pressable onPress={handlePress} style={{ position: 'relative' }}>
+      <IconButton icon="chat-outline" size={20} />
+      {unreadCount > 0 && (
+        <Badge
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            backgroundColor: '#f44336',
+            minWidth: 16,
+            height: 16,
+          }}
+          size={12}
+        >
+          {unreadCount}
+        </Badge>
+      )}
+    </Pressable>
+  );
 }
 
 export default function OrdersScreen() {
@@ -571,19 +614,11 @@ export default function OrdersScreen() {
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.cellCenter}>
                       <View style={styles.actionsCell}>
-                        <Link
-                          href={{
-                            pathname: '/chat/[orderId]',
-                            params: {
-                              orderId: order.id,
-                              merchantId: order.merchantId,
-                              returnTo: 'orders',
-                              customerName: order.customerName,
-                            },
-                          }}
-                          asChild>
-                          <IconButton icon="chat-outline" size={20} />
-                        </Link>
+                        <ChatIconWithBadge
+                          orderId={order.id}
+                          merchantId={order.merchantId}
+                          customerName={order.customerName}
+                        />
                         <IconButton icon="chevron-right" size={20} />
                       </View>
                     </DataTable.Cell>
@@ -844,19 +879,11 @@ export default function OrdersScreen() {
                     </DataTable.Cell>
                     <DataTable.Cell style={styles.cellCenter}>
                       <View style={styles.actionsCell}>
-                        <Link
-                          href={{
-                            pathname: '/chat/[orderId]',
-                            params: {
-                              orderId: order.id,
-                              merchantId: order.merchantId,
-                              returnTo: 'orders',
-                              customerName: order.customerName,
-                            },
-                          }}
-                          asChild>
-                          <IconButton icon="chat-outline" size={20} />
-                        </Link>
+                        <ChatIconWithBadge
+                          orderId={order.id}
+                          merchantId={order.merchantId}
+                          customerName={order.customerName}
+                        />
                         <IconButton icon="chevron-right" size={20} />
                       </View>
                     </DataTable.Cell>

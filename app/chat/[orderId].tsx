@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Appbar, Text } from 'react-native-paper';
 import Chat from '../../components/chat/Chat';
 import { auth } from '../../config/firebaseConfig';
+import { useChatNotifications } from '../../contexts/ChatNotificationsContext';
 import * as OrdersService from '../../services/orders';
 
 // merchantId dinâmico via autenticação; sem fallback hardcoded
@@ -18,10 +19,18 @@ export default function ChatScreen() {
     }>();
     const router = useRouter();
     const navigation = useNavigation();
+    const { markAsRead } = useChatNotifications();
     const envMerchant = process.env.EXPO_PUBLIC_MERCHANT_ID as string | undefined;
     const merchantId = queryMerchantId || auth.currentUser?.uid || envMerchant || null;
 
     const [customerName, setCustomerName] = useState<string | null>(customerNameParam ?? null);
+
+    // Marcar mensagens como lidas ao abrir o chat
+    useEffect(() => {
+        if (orderId && merchantId) {
+            markAsRead(orderId);
+        }
+    }, [orderId, merchantId, markAsRead]);
 
     if (!orderId) {
         return (

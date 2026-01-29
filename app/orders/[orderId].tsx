@@ -2,10 +2,11 @@ import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, Button, Text } from 'react-native-paper';
+import { ActivityIndicator, Appbar, Badge, Button, Text } from 'react-native-paper';
 import OrderStatusChip from '../../components/OrderStatusChip';
 import { auth } from '../../config/firebaseConfig';
 import { CARD_PADDING } from '../../constants/card';
+import { useChatNotifications } from '../../contexts/ChatNotificationsContext';
 import * as OrdersService from '../../services/orders';
 import { textSpacing, typography } from '../../styles/theme';
 import type { Order } from '../../types';
@@ -62,6 +63,7 @@ export default function OrderDetailScreen() {
 
     const router = useRouter();
     const navigation = useNavigation();
+    const { unreadByOrder } = useChatNotifications();
 
     const envMerchant = process.env.EXPO_PUBLIC_MERCHANT_ID as string | undefined;
     const merchantId = queryMerchantId || auth.currentUser?.uid || envMerchant || null;
@@ -69,6 +71,8 @@ export default function OrderDetailScreen() {
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const unreadCount = orderId ? (unreadByOrder.get(orderId) || 0) : 0;
 
     useEffect(() => {
         if (!orderId || !merchantId) return;
@@ -273,22 +277,36 @@ export default function OrderDetailScreen() {
                             </View>
 
                             <View style={{ marginTop: 8 }}>
-                                <Button
-                                    mode="contained"
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: '/chat/[orderId]',
-                                            params: {
-                                                orderId: order.id,
-                                                merchantId: order.merchantId,
-                                                returnTo: 'orderDetail',
-                                                customerName: order.customerName,
-                                            },
-                                        })
-                                    }
-                                >
-                                    Abrir chat
-                                </Button>
+                                <View style={{ position: 'relative' }}>
+                                    <Button
+                                        mode="contained"
+                                        onPress={() =>
+                                            router.push({
+                                                pathname: '/chat/[orderId]',
+                                                params: {
+                                                    orderId: order.id,
+                                                    merchantId: order.merchantId,
+                                                    returnTo: 'orderDetail',
+                                                    customerName: order.customerName,
+                                                },
+                                            })
+                                        }
+                                    >
+                                        Abrir chat
+                                    </Button>
+                                    {unreadCount > 0 && (
+                                        <Badge
+                                            style={{
+                                                position: 'absolute',
+                                                top: -6,
+                                                right: -6,
+                                                backgroundColor: '#f44336',
+                                            }}
+                                        >
+                                            {unreadCount}
+                                        </Badge>
+                                    )}
+                                </View>
                             </View>
 
                             {Array.isArray(order.items) && order.items.length > 0 && (

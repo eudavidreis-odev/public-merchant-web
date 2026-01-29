@@ -102,8 +102,12 @@ export function useFinanceMetrics(
     }, [period, customRange]);
 
     const revenueMonthly: RevenuePoint[] = useMemo(() => {
-        if (period === 'today') {
-            const { start, end } = getPeriodRange(period, customRange);
+        // Se o período for 'today' OU customizado de 1 dia, mostra por horas
+        const { start, end } = getPeriodRange(period, customRange);
+        const diffInDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const shouldShowHourly = period === 'today' || (period === 'custom' && diffInDays <= 1);
+
+        if (shouldShowHourly) {
             const byHour = new Map<number, number>();
 
             orders.forEach((o) => {
@@ -131,8 +135,6 @@ export function useFinanceMetrics(
 
         const map: Record<string, number> = {};
         for (const day of daysInPeriod) map[day.key] = 0;
-
-        const { start, end } = getPeriodRange(period, customRange);
 
         orders.forEach((o) => {
             const created = o.createdAt?.toDate?.() ?? (o.createdAt as any);
