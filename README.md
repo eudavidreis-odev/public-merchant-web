@@ -74,7 +74,6 @@ npm run test
 Observações:
 
 - Verifique o conteúdo de `config/` para chaves de API ou arquivos de configuração (ex.: Firebase). Adicione variáveis de ambiente conforme necessário antes de rodar funcionalidades que dependam de serviços externos.
-- Este pacote é parte do monorepo; execute os comandos a partir da pasta `merchant-web`.
 
 ## Contribuição
 
@@ -83,7 +82,6 @@ Observações:
 
 ---
 
-Se quiser, eu atualizo o README com instruções específicas de configuração (Firebase, Stripe) — me passe onde estão as chaves ou o formato desejado.
 # Merchant Web - Aplicativo Lojista
 
 Este é o aplicativo para lojistas gerenciarem seus produtos, pedidos e outras funcionalidades da Lancheria.
@@ -210,11 +208,3 @@ merchant-web/
 ├── types/           # Definições TypeScript
 └── assets/          # Recursos estáticos
 ```
-
-## Próximos Passos
-
-- [ ] Implementar tela de pedidos
-- [ ] Implementar dashboard com estatísticas
-- [ ] Adicionar autenticação de lojista
-- [ ] Implementar notificações em tempo real
-- [ ] Adicionar relatórios e analytics
