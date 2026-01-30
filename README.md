@@ -1,3 +1,89 @@
+# merchant-web
+
+> Interface web do painel/portal do lojista do projeto Lancheria.
+
+## Tecnologias
+
+- **React** (18+/19) e **React DOM**
+- **React Native Web** e **Expo** (expo-router) — app multiplataforma (web/mobile)
+- **TypeScript**
+- **Firebase** (SDK) para autenticação e backend
+- **React Navigation** para navegação
+- **React Native Paper** para componentes de UI
+- Outras libs: `react-native-svg`, `react-native-reanimated`, `react-native-gifted-charts`
+
+## Funcionalidades principais
+
+- Painel e telas do lojista (produtos, pedidos, perfil)
+- Autenticação via Firebase
+- Upload e seleção de imagens (`expo-image-picker`)
+- Gráficos e visualização de métricas
+- Suporte multiplataforma (web + mobile via Expo)
+- Testes com Jest e Testing Library
+
+## Estrutura do projeto (resumo)
+
+- `app/` — rotas e telas principais
+- `components/` — componentes reusáveis
+- `config/` — arquivos de configuração (ex.: Firebase)
+- `contexts/` — provedor de estado (Auth, Cart, Orders)
+- `styles/` — temas e estilos globais
+- `__tests__/` — testes unitários e de integração
+
+## Como rodar (rápido)
+
+Pré-requisitos:
+
+- Node.js (recomendado LTS)
+- npm ou yarn
+- Expo CLI (opcional): `npm install -g expo-cli` ou use `npx`
+
+Passos:
+
+1. Abra um terminal na pasta `merchant-web`:
+
+```bash
+cd merchant-web
+```
+
+2. Instale dependências:
+
+```bash
+npm install
+# ou
+yarn install
+```
+
+3. Rode em desenvolvimento (Expo):
+
+```bash
+npm run start
+# ou para web
+npm run web
+# para Android/iOS (emulador ou dispositivo conectado)
+npm run android
+npm run ios
+```
+
+4. Executar testes:
+
+```bash
+npm run test
+```
+
+Observações:
+
+- Verifique o conteúdo de `config/` para chaves de API ou arquivos de configuração (ex.: Firebase). Adicione variáveis de ambiente conforme necessário antes de rodar funcionalidades que dependam de serviços externos.
+- Este pacote é parte do monorepo; execute os comandos a partir da pasta `merchant-web`.
+
+## Contribuição
+
+- Abra um PR com mudanças e testes quando possível.
+- Siga as convenções de lint e formatação já usadas no repositório.
+
+---
+
+Se quiser, eu atualizo o README com instruções específicas de configuração (Firebase, Stripe) — me passe onde estão as chaves ou o formato desejado.
 # Merchant Web - Aplicativo Lojista
 
 Este é o aplicativo para lojistas gerenciarem seus produtos, pedidos e outras funcionalidades da Lancheria.
@@ -116,8 +202,8 @@ O aplicativo utiliza a mesma configuração do Firebase do projeto principal Lan
 
 ```
 merchant-web/
-├── app/              # Telas do aplicativo
-├── components/       # Componentes reutilizáveis
+├── app/             # Telas do aplicativo
+├── components/      # Componentes reutilizáveis
 ├── config/          # Configurações (Firebase)
 ├── services/        # Serviços de API/Banco
 ├── scripts/         # Scripts utilitários
